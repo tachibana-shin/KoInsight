@@ -1,17 +1,16 @@
-import { NextFunction, Request, Response, Router } from 'express';
+import { Hono } from 'hono';
 import { getBookInsights } from './open-ai-service';
 
-const router = Router();
+const ai = new Hono();
 
-router.get('/book-insights', async (req: Request, res: Response, next: NextFunction) => {
-  const { title, author } = req.query;
-
+ai.get('/book-insights', async (c) => {
+  const { title, author } = c.req.query();
   try {
-    const book_insights = await getBookInsights(title?.toString() ?? '', author?.toString() ?? '');
-    res.send(book_insights);
+    const book_insights = await getBookInsights(title ?? '', author ?? '');
+    return c.json(book_insights);
   } catch {
-    res.status(500).send('Failed to fetch data');
+    return c.text('Failed to fetch data', 500);
   }
 });
 
-export { router as openAiRouter };
+export { ai as openAiRouter };

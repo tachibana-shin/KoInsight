@@ -1,71 +1,53 @@
-import cors from 'cors';
-import express, { Request, Response } from 'express';
-import { Server } from 'http';
-import morgan from 'morgan';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import path from 'path';
 import { openAiRouter } from './ai/open-ai-router';
 import { booksRouter } from './books/books-router';
+import { coversRouter } from './books/covers/covers-router';
 import { appConfig } from './config';
 import { devicesRouter } from './devices/devices-router';
-import { db } from './knex';
 import { kopluginRouter } from './koplugin/koplugin-router';
 import { kosyncRouter } from './kosync/kosync-router';
 import { openLibraryRouter } from './open-library/open-library-router';
 import { statsRouter } from './stats/stats-router';
 import { uploadRouter } from './upload/upload-router';
-
-async function setupServer() {
-  const app = express();
-  // Increase the limit to be able to upload the whole database
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
-  app.use(morgan('tiny'));
-
-  // if (appConfig.env === 'development') {
-  // Allow requests from dev build
-  app.use(cors({ origin: '*' }));
-  // }
-
-  app.use('/', kosyncRouter); // Needs to be mounted at root to follow KoSync API
-  app.use('/api/plugin', kopluginRouter);
-  app.use('/api/devices', devicesRouter);
-  app.use('/api/books', booksRouter);
-  app.use('/api/stats', statsRouter);
-  app.use('/api/upload', uploadRouter);
-  app.use('/api/open-library', openLibraryRouter);
-  app.use('/api/ai', openAiRouter);
-
-  // Serve react app
-  app.use(express.static(appConfig.webBuildPath));
-  app.get(/.*/, (_req: Request, res: Response) => {
-    res.sendFile(path.join(appConfig.webBuildPath, 'index.html'));
-  });
-
-  // Start :)
-  const server = app.listen(appConfig.port, appConfig.hostname, () => {
-    console.info(`KoInsight back-end is running on http://${appConfig.hostname}:${appConfig.port}`);
-  });
-
-  return server;
-}
-
-function stopServer(signal: NodeJS.Signals, server: Server) {
-  console.log(`Received ${signal.toString()}. Gracefully shutting down...`);
-  server.close(() => {
-    console.log('Server closed.');
-    process.exit(0);
-  });
-}
+import { db } from './db';
 
 async function main() {
-  console.log('Running database migrations');
-  await db.migrate.latest({ directory: path.join(__dirname, 'db', 'migrations') });
-  console.log('Database migrated successfully');
+  const app = new Hono();
 
-  setupServer().then((server) => {
-    process.on('SIGINT', (signal) => stopServer(signal, server));
-    process.on('SIGTERM', (signal) => stopServer(signal, server));
-  });
+  // Middleware
+  app.use('*', logger());
+  app.use('*', cors({ origin: '*' }));
+
+  // KoSync API (mounted at root to maintain compatibility)
+  app.route('/', kosyncRouter);
+
+  // API routes
+  app.route('/api/plugin', kopluginRouter);
+  app.route('/api/devices', devicesRouter);
+  app.route('/api/books', booksRouter);
+  // Note: covers sub-router is nested under books/:bookId/cover
+  app.route('/api/books/:bookId/cover', coversRouter);
+  app.route('/api/stats', statsRouter);
+  app.route('/api/upload', uploadRouter);
+  app.route('/api/open-library', openLibraryRouter);
+  app.route('/api/ai', openAiRouter);
+
+  // Serve static web build
+  const webBuildPath = path.relative(process.cwd(), appConfig.webBuildPath);
+  app.use('/*', serveStatic({ root: webBuildPath }));
+  app.get('/*', serveStatic({ path: path.join(webBuildPath, 'index.html') }));
+
+  const port = appConfig.port;
+  const hostname = appConfig.hostname;
+
+  console.info(`KoInsight back-end is running on http://${hostname}:${port}`);
+
+  serve({ fetch: app.fetch, port, hostname });
 }
 
-main();
+main().catch(console.error);

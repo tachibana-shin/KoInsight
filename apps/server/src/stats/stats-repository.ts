@@ -1,27 +1,41 @@
 import { PageStat } from '@koinsight/common/types/page-stat';
-import { db } from '../knex';
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq, and, isNull, InferInsertModel } from 'drizzle-orm';
+import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 
 export class StatsRepository {
   private static updateStartTime(stat: PageStat): PageStat {
-    return { ...stat, start_time: stat.start_time * 1000 };
+    return {
+      ...stat,
+      startTime: stat.startTime * 1000,
+    };
   }
 
   static async getAll(): Promise<PageStat[]> {
-    const stats = await db<PageStat>('page_stat')
-      .join('book', 'page_stat.book_md5', 'book.md5')
-      .where({ 'book.soft_deleted': false })
-      .select('page_stat.*');
+    const stats = await db.select({
+      id: schema.pageStat.id,
+      bookMd5: schema.pageStat.bookMd5,
+      deviceId: schema.pageStat.deviceId,
+      page: schema.pageStat.page,
+      duration: schema.pageStat.duration,
+      totalPages: schema.pageStat.totalPages,
+      startTime: schema.pageStat.startTime,
+    })
+      .from(schema.pageStat)
+      .innerJoin(schema.book, eq(schema.pageStat.bookMd5, schema.book.md5))
+      .where(isNull(schema.book.softDeletedAt));
 
     return stats.map(this.updateStartTime);
   }
 
   static async getByBookMD5(book_md5: string): Promise<PageStat[]> {
-    const bookStats = await db<PageStat>('page_stat').where({ book_md5 });
-    return bookStats.map(this.updateStartTime);
+    const stats = await db.select().from(schema.pageStat).where(eq(schema.pageStat.bookMd5, book_md5));
+    return stats.map(this.updateStartTime);
   }
 
-  static async insert(data: PageStat): Promise<number[]> {
-    return db<PageStat>('page_stat').insert(data);
+  static async insert(data: PageStat): Promise<void> {
+    await db.insert(schema.pageStat).values(data);
   }
 
   static async update(
@@ -29,8 +43,15 @@ export class StatsRepository {
     device_id: string,
     page: number,
     start_time: number,
-    data: Partial<PageStat>
-  ): Promise<number> {
-    return db<PageStat>('page_stat').where({ book_md5, device_id, page, start_time }).update(data);
+    data: PgUpdateSetSource<typeof schema.pageStat>
+  ): Promise<void> {
+    await db.update(schema.pageStat)
+      .set(data)
+      .where(and(
+        eq(schema.pageStat.bookMd5, book_md5),
+        eq(schema.pageStat.deviceId, device_id),
+        eq(schema.pageStat.page, page),
+        eq(schema.pageStat.startTime, start_time)
+      ));
   }
 }

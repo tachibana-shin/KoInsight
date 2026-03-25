@@ -1,4 +1,3 @@
-export type Genre = {
-  id: number;
-  name: string;
-}
+import { genre } from '../db/schema';
+
+export type Genre = typeof genre.$inferSelect;

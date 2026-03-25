@@ -1,33 +1,39 @@
 import { Genre } from '@koinsight/common/types/genre';
-import { db } from '../knex';
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 type GenreCreate = Omit<Genre, 'id'>;
 
 export class GenreRepository {
   static async getAll(): Promise<Genre[]> {
-    return db<Genre>('genre').select('*');
+    return await db.select().from(schema.genre);
   }
 
   static async getByName(name: string): Promise<Genre | undefined> {
-    return db<Genre>('genre').where({ name }).first();
+    const [result] = await db.select().from(schema.genre).where(eq(schema.genre.name, name));
+    return result;
   }
 
   static async getByBookMd5(md5: string): Promise<Genre[]> {
-    return db<Genre>('genre')
-      .select('genre.name')
-      .join('book_genre', 'book_genre.id', 'genre.id')
-      .where({ 'book_genre.book_md5': md5 });
+    const results = await db.select({
+      id: schema.genre.id,
+      name: schema.genre.name
+    })
+    .from(schema.genre)
+    .innerJoin(schema.bookGenre, eq(schema.bookGenre.genreId, schema.genre.id))
+    .where(eq(schema.bookGenre.bookMd5, md5));
+    
+    return results;
   }
 
   static async create(genre: GenreCreate): Promise<Genre> {
-    const [createdGenre] = await db<Genre>('genre').insert(genre).returning('*');
-
+    const [createdGenre] = await db.insert(schema.genre).values(genre).returning();
     return createdGenre;
   }
 
   static async findOrCreate(genre: GenreCreate): Promise<Genre> {
     const existingGenre = await this.getByName(genre.name);
-
     if (existingGenre) {
       return existingGenre;
     } else {

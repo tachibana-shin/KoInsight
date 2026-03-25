@@ -145,11 +145,11 @@ npm run dev
 ## Key Technologies
 
 **Backend:**
-- Express 5.x - Web framework
-- Knex.js - SQL query builder
-- better-sqlite3 - SQLite driver
+- Hono - Web framework
+- Drizzle ORM - TypeScript ORM
+- sql.js - SQLite WASM for parsing uploads
+- postgres.js - Postgres driver
 - bcryptjs - Password hashing
-- Multer - File upload handling
 - Zod - Schema validation
 
 **Frontend:**
@@ -172,16 +172,16 @@ npm run dev
 ```
 koinsight/
 ├── apps/
-│   ├── server/              # Express backend (TypeScript)
+│   ├── server/              # Hono backend (TypeScript)
 │   │   ├── src/
 │   │   │   ├── annotations/ # Annotation management
 │   │   │   ├── books/       # Book management
-│   │   │   ├── db/          # Database migrations, seeds, factories
+│   │   │   ├── db/          # Database schema and migrations
 │   │   │   ├── devices/     # Device management
 │   │   │   ├── genres/      # Genre management
 │   │   │   ├── kosync/      # KoSync protocol implementation
 │   │   │   ├── stats/       # Statistics and analytics
-│   │   │   └── app.ts       # Express app entry point
+│   │   │   └── app.ts       # App entry point
 │   │   └── package.json
 │   └── web/                 # React frontend (Vite + TypeScript)
 │       ├── src/
@@ -193,7 +193,7 @@ koinsight/
 ├── packages/
 │   └── common/              # Shared types and utilities
 │       └── types/           # TypeScript type definitions
-├── data/                    # SQLite database files (gitignored)
+├── drizzle/                 # Drizzle migrations
 ├── package.json             # Root workspace config
 ├── turbo.json               # Turbo build configuration
 └── .prettierrc              # Prettier configuration
@@ -203,10 +203,10 @@ koinsight/
 
 ### Database Overview
 
-- **Engine**: SQLite (via better-sqlite3)
-- **Query Builder**: Knex.js
-- **Location**: `data/dev.db` (development), `data/prod.db` (production)
-- **Migrations**: Located in `apps/server/src/db/migrations/`
+- **Engine**: PostgreSQL (via postgres.js)
+- **ORM**: Drizzle ORM
+- **Parser**: sql.js (for processing KOReader SQLite exports)
+- **Migrations**: Located in `apps/server/drizzle/`
 - **Seeds**: Located in `apps/server/src/db/seeds/`
 
 ### Running Migrations

@@ -1,25 +1,40 @@
 import { Annotation, AnnotationType, KoReaderAnnotation } from '@koinsight/common/types';
-import { db } from '../knex';
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq, and, isNull, desc, isNotNull, sql, SQL, InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import { PgQueryResultHKT, PgTransaction, PgUpdateSetSource } from 'drizzle-orm/pg-core';
+import { PostgresJsTransaction } from 'drizzle-orm/postgres-js';
 
 export class AnnotationsRepository {
   /**
    * Get all annotations for a book, optionally filtered by device
    */
   static async getByBookMd5(md5: string, deviceId?: string): Promise<Annotation[]> {
-    let query = db<Annotation>('annotation').where({ book_md5: md5 }).orderBy('datetime', 'desc');
+    let whereClause: SQL = eq(schema.annotation.bookMd5, md5);
 
     if (deviceId) {
-      query = query.where({ device_id: deviceId });
+      whereClause = and(whereClause, eq(schema.annotation.deviceId, deviceId))!;
     }
 
-    const annotations = await query;
+    const annotations = await db.select()
+      .from(schema.annotation)
+      .where(whereClause)
+      .orderBy(desc(schema.annotation.datetime));
 
-    // Parse JSON position data and expose a simple `deleted` flag for clients
     return annotations.map((a) => ({
       ...a,
-      pos0: a.pos0 ? JSON.parse(a.pos0 as string) : undefined,
-      pos1: a.pos1 ? JSON.parse(a.pos1 as string) : undefined,
-      deleted: Boolean(a.deleted_at),
+      book_md5: a.bookMd5,
+      device_id: a.deviceId,
+      annotation_type: a.annotationType,
+      page_ref: a.pageRef,
+      datetime_updated: a.datetimeUpdated,
+      total_pages: a.totalPages,
+      deleted_at: a.deletedAt,
+      created_at: a.createdAt,
+      updated_at: a.updatedAt,
+      pos0: a.pos0 ? JSON.parse(a.pos0) : undefined,
+      pos1: a.pos1 ? JSON.parse(a.pos1) : undefined,
+      deleted: Boolean(a.deletedAt),
     }));
   }
 
@@ -32,67 +47,74 @@ export class AnnotationsRepository {
     deviceId?: string
   ): Promise<Annotation[]> {
     const annotations = await this.getByBookMd5(md5, deviceId);
-    return annotations.filter((a) => a.annotation_type === type);
+    return annotations.filter((a) => a.annotationType === type);
   }
 
   /**
    * Get all annotations for a device
    */
   static async getByDeviceId(deviceId: string): Promise<Annotation[]> {
-    const annotations = await db<Annotation>('annotation')
-      .where({ device_id: deviceId })
-      .orderBy('datetime', 'desc');
+    const annotations = await db.select()
+      .from(schema.annotation)
+      .where(eq(schema.annotation.deviceId, deviceId))
+      .orderBy(desc(schema.annotation.datetime));
 
     return annotations.map((a) => ({
       ...a,
-      pos0: a.pos0 ? JSON.parse(a.pos0 as string) : undefined,
-      pos1: a.pos1 ? JSON.parse(a.pos1 as string) : undefined,
+      pos0: a.pos0 ? JSON.parse(a.pos0) : undefined,
+      pos1: a.pos1 ? JSON.parse(a.pos1) : undefined,
     }));
   }
 
   /**
    * Bulk insert annotations from KoReader
-   * Can accept an optional transaction to avoid nested transactions
    */
-  static async bulkInsert(
+  static async bulkInsert<T extends PgQueryResultHKT>(
     bookMd5: string,
     deviceId: string,
     koreaderAnnotations: KoReaderAnnotation[],
-    trx?: any
+    tx?: PgTransaction<T>
   ): Promise<void> {
     if (koreaderAnnotations.length === 0) {
       return;
     }
 
-    const annotations = koreaderAnnotations.map((ka) =>
-      this.convertFromKoReader(bookMd5, deviceId, ka)
-    );
+    const executor = tx || db;
 
-    const insertAnnotations = async (transaction: any) => {
-      for (const annotation of annotations) {
-        await transaction('annotation')
-          .insert(annotation)
-          .onConflict(['book_md5', 'device_id', 'page_ref', 'datetime'])
-          // Only update fields that users can actually change in KoReader
-          // Do NOT update pageno/total_pages - these are historical context!
-          .merge([
-            'text',
-            'note',
-            'datetime_updated',
-            'chapter',
-            'updated_at',
-            'drawer',
-            'color',
-            'deleted_at',
-          ]);
+    for (const ka of koreaderAnnotations) {
+      let annotationType: AnnotationType;
+      if (!ka.drawer && !ka.color && !ka.pos0 && !ka.pos1) {
+        annotationType = 'bookmark';
+      } else if (ka.note && ka.text) {
+        annotationType = 'note';
+      } else {
+        annotationType = 'highlight';
       }
-    };
 
-    // Use provided transaction or create a new one
-    if (trx) {
-      await insertAnnotations(trx);
-    } else {
-      await db.transaction(insertAnnotations);
+      await executor.insert(schema.annotation)
+        .values({
+          ...ka,
+          bookMd5,
+          deviceId,
+          pos0: typeof ka.pos0 === "object" ? JSON.stringify(ka.pos0) : ka.pos0,
+          pos1: typeof ka.pos1 === "object" ? JSON.stringify(ka.pos1) : ka.pos1,
+          datetime: ka.datetime,
+          datetimeUpdated: ka.datetime_updated,
+          annotationType,
+          pageRef: ka.page + ''
+        } satisfies InferInsertModel<typeof schema.annotation>)
+        .onConflictDoUpdate({
+          target: [schema.annotation.bookMd5, schema.annotation.deviceId, schema.annotation.pageRef, schema.annotation.datetime],
+          set: {
+            text: ka.text,
+            note: ka.note,
+            datetimeUpdated: ka.datetime_updated,
+            chapter: ka.chapter,
+            drawer: ka.drawer,
+            color: ka.color,
+            updatedAt: new Date(),
+          }
+        });
     }
   }
 
@@ -102,14 +124,25 @@ export class AnnotationsRepository {
   static async insert(
     annotation: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>
   ): Promise<Annotation> {
-    // Stringify position data if it's an object
-    const annotationToInsert = {
-      ...annotation,
-      pos0: typeof annotation.pos0 === 'object' ? JSON.stringify(annotation.pos0) : annotation.pos0,
-      pos1: typeof annotation.pos1 === 'object' ? JSON.stringify(annotation.pos1) : annotation.pos1,
-    };
-
-    const [inserted] = await db<Annotation>('annotation').insert(annotationToInsert).returning('*');
+    const [inserted] = await db.insert(schema.annotation)
+      .values({
+        bookMd5: annotation.bookMd5,
+        deviceId: annotation.deviceId,
+        annotationType: annotation.annotationType,
+        text: annotation.text,
+        note: annotation.note,
+        drawer: annotation.drawer,
+        color: annotation.color,
+        chapter: annotation.chapter,
+        pageno: annotation.pageno,
+        pageRef: annotation.pageRef,
+        totalPages: annotation.totalPages,
+        pos0: typeof annotation.pos0 === 'object' ? JSON.stringify(annotation.pos0) : annotation.pos0,
+        pos1: typeof annotation.pos1 === 'object' ? JSON.stringify(annotation.pos1) : annotation.pos1,
+        datetime: annotation.datetime,
+        datetimeUpdated: annotation.datetimeUpdated,
+      })
+      .returning();
 
     return {
       ...inserted,
@@ -123,50 +156,54 @@ export class AnnotationsRepository {
    */
   static async update(
     id: number,
-    updates: Partial<
-      Omit<Annotation, 'id' | 'book_md5' | 'device_id' | 'created_at' | 'updated_at'>
-    >
-  ): Promise<number> {
-    // Stringify position data if it's an object
-    const updatesToApply = {
-      ...updates,
-      pos0:
-        updates.pos0 && typeof updates.pos0 === 'object'
-          ? JSON.stringify(updates.pos0)
-          : updates.pos0,
-      pos1:
-        updates.pos1 && typeof updates.pos1 === 'object'
-          ? JSON.stringify(updates.pos1)
-          : updates.pos1,
-    };
+    updates: Partial<Omit<Annotation, 'id' | 'book_md5' | 'device_id' | 'created_at' | 'updated_at'>>
+  ): Promise<void> {
+    const data = { ...updates, updatedAt: new Date() };
 
-    return db('annotation').where({ id }).update(updatesToApply);
+    // Map snake_case to camelCase for Drizzle
+    const mapped: PgUpdateSetSource<typeof schema.annotation> = {};
+    if (data.text !== undefined) mapped.text = data.text;
+    if (data.note !== undefined) mapped.note = data.note;
+    if (data.drawer !== undefined) mapped.drawer = data.drawer;
+    if (data.color !== undefined) mapped.color = data.color;
+    if (data.chapter !== undefined) mapped.chapter = data.chapter;
+    if (data.pageno !== undefined) mapped.pageno = data.pageno;
+    if (data.pageRef !== undefined) mapped.pageRef = data.pageRef;
+    if (data.pos0 !== undefined) mapped.pos0 = typeof data.pos0 === 'object' ? JSON.stringify(data.pos0) : data.pos0;
+    if (data.pos1 !== undefined) mapped.pos1 = typeof data.pos1 === 'object' ? JSON.stringify(data.pos1) : data.pos1;
+    if (data.datetimeUpdated !== undefined) mapped.datetimeUpdated = data.datetimeUpdated;
+    if (data.updatedAt !== undefined) mapped.updatedAt = data.updatedAt;
+
+    await db.update(schema.annotation)
+      .set(mapped)
+      .where(eq(schema.annotation.id, id));
   }
 
   /**
    * Delete an annotation
    */
-  static async delete(id: number): Promise<number> {
-    return db('annotation').where({ id }).delete();
+  static async delete(id: number): Promise<void> {
+    await db.delete(schema.annotation).where(eq(schema.annotation.id, id));
   }
 
   /**
    * Delete all annotations for a book
    */
-  static async deleteByBookMd5(md5: string): Promise<number> {
-    return db('annotation').where({ book_md5: md5 }).delete();
+  static async deleteByBookMd5(md5: string): Promise<void> {
+    await db.delete(schema.annotation).where(eq(schema.annotation.bookMd5, md5));
   }
 
   /**
    * Get counts by type for a book
    */
   static async getCountsByType(md5: string): Promise<Record<AnnotationType, number>> {
-    const counts = await db('annotation')
-      .where({ book_md5: md5 })
-      .whereNull('deleted_at') // Only count non-deleted annotations
-      .select('annotation_type')
-      .count('* as count')
-      .groupBy('annotation_type');
+    const counts = await db.select({
+      type: schema.annotation.annotationType,
+      count: sql<number>`count(*)`,
+    })
+      .from(schema.annotation)
+      .where(and(eq(schema.annotation.bookMd5, md5), isNull(schema.annotation.deletedAt)))
+      .groupBy(schema.annotation.annotationType);
 
     const result: Record<AnnotationType, number> = {
       highlight: 0,
@@ -174,8 +211,8 @@ export class AnnotationsRepository {
       bookmark: 0,
     };
 
-    counts.forEach((row: any) => {
-      result[row.annotation_type as AnnotationType] = Number(row.count);
+    counts.forEach((row) => {
+      result[row.type as AnnotationType] = Number(row.count);
     });
 
     return result;
@@ -185,100 +222,62 @@ export class AnnotationsRepository {
    * Get total count of deleted annotations for a book
    */
   static async getDeletedCount(md5: string): Promise<number> {
-    const result = await db('annotation')
-      .where({ book_md5: md5 })
-      .whereNotNull('deleted_at')
-      .count('* as count')
-      .first();
+    const [result] = await db.select({
+      count: sql<number>`count(*)`,
+    })
+      .from(schema.annotation)
+      .where(and(eq(schema.annotation.bookMd5, md5), isNotNull(schema.annotation.deletedAt)));
 
     return result ? Number(result.count) : 0;
   }
 
   /**
-   * Convert KoReader annotation format to our database format
-   */
-  private static convertFromKoReader(
-    bookMd5: string,
-    deviceId: string,
-    ka: KoReaderAnnotation
-  ): Omit<Annotation, 'id' | 'created_at' | 'updated_at'> {
-    // Determine annotation type
-    let type: AnnotationType;
-    if (!ka.drawer && !ka.color && !ka.pos0 && !ka.pos1) {
-      type = 'bookmark';
-    } else if (ka.note && ka.text) {
-      type = 'note';
-    } else {
-      type = 'highlight';
-    }
-
-    return {
-      book_md5: bookMd5,
-      device_id: deviceId,
-      annotation_type: type,
-      text: ka.text,
-      note: ka.note,
-      drawer: ka.drawer,
-      color: ka.color,
-      chapter: ka.chapter,
-      pageno: ka.pageno,
-      page_ref: String(ka.page),
-      total_pages: ka.total_pages,
-      pos0: ka.pos0 ? JSON.stringify(ka.pos0) : undefined,
-      pos1: ka.pos1 ? JSON.stringify(ka.pos1) : undefined,
-      datetime: ka.datetime,
-      datetime_updated: ka.datetime_updated,
-    };
-  }
-
-  /**
    * Soft-delete an annotation by ID
-   * Sets deleted_at to current timestamp instead of removing the record
    */
-  static async markAsDeleted(id: number): Promise<number> {
-    return db('annotation').where({ id }).update({ deleted_at: db.fn.now() });
+  static async markAsDeleted(id: number): Promise<void> {
+    await db.update(schema.annotation)
+      .set({ deletedAt: new Date() })
+      .where(eq(schema.annotation.id, id));
   }
 
   /**
    * Soft-delete multiple annotations by their identifiers
-   * Used during sync to mark annotations that were deleted in KoReader
-   *
-   * @param bookMd5 - The book's MD5 hash
-   * @param deviceId - The device ID
-   * @param identifiers - Array of unique identifiers (page_ref + datetime)
-   * @param trx - Optional transaction to use
    */
-  static async markManyAsDeleted(
+  static async markManyAsDeleted<T extends PgQueryResultHKT>(
     bookMd5: string,
     deviceId: string,
     identifiers: Array<{ page_ref: string; datetime: string }>,
-    trx?: any
-  ): Promise<number> {
+    tx?: PgTransaction<T>
+  ): Promise<void> {
     if (identifiers.length === 0) {
-      return 0;
+      return;
     }
 
-    const executor = trx || db;
+    const executor = tx || db;
 
-    // Build conditions for each identifier
-    const query = executor('annotation')
-      .where({ book_md5: bookMd5, device_id: deviceId })
-      .whereNull('deleted_at') // Only mark if not already deleted
-      .where((builder: any) => {
-        identifiers.forEach(({ page_ref, datetime }) => {
-          builder.orWhere({ page_ref, datetime });
-        });
-      })
-      .update({ deleted_at: db.fn.now() });
+    // Postgres supports multiple conditions in WHERE clause using ROW constructors, 
+    // but for simplicity and compatibility, we'll use a loop or a complex OR chain.
+    // Drizzle's `inArray` can't easily do (col1, col2) IN ((v1, v2), ...).
 
-    return query;
+    for (const { page_ref, datetime } of identifiers) {
+      await executor.update(schema.annotation)
+        .set({ deletedAt: new Date() })
+        .where(and(
+          eq(schema.annotation.bookMd5, bookMd5),
+          eq(schema.annotation.deviceId, deviceId),
+          eq(schema.annotation.pageRef, page_ref),
+          eq(schema.annotation.datetime, datetime),
+          isNull(schema.annotation.deletedAt)
+        ));
+    }
   }
 
   /**
    * Restore a soft-deleted annotation
-   * Sets deleted_at back to NULL
    */
-  static async restore(id: number): Promise<number> {
-    return db('annotation').where({ id }).update({ deleted_at: null });
+  static async restore(id: number): Promise<void> {
+    await db.update(schema.annotation)
+      .set({ deletedAt: null })
+      .where(eq(schema.annotation.id, id));
   }
 }

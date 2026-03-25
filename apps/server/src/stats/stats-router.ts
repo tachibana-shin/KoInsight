@@ -1,28 +1,27 @@
-import { GetAllStatsResponse } from '@koinsight/common/types';
-import { Request, Response, Router } from 'express';
+import { Hono } from 'hono';
 import { BooksRepository } from '../books/books-repository';
-import { StatsRepository } from './stats-repository';
+import { StatsRepository } from './StatsRepository';
 import { StatsService } from './stats-service';
 
-const router = Router();
+const stats = new Hono();
 
 /**
  * Get all stats
  */
-router.get('/', async (_: Request, res: Response) => {
+stats.get('/', async (c) => {
   const books = await BooksRepository.getAllWithData();
   const totalPagesRead = StatsService.totalPagesRead(books);
 
-  const stats = await StatsRepository.getAll();
-  const perMonth = StatsService.getPerMonthReadingTime(stats);
-  const perDayOfTheWeek = StatsService.perDayOfTheWeek(stats);
-  const mostPagesInADay = StatsService.mostPagesInADay(books, stats);
-  const totalReadingTime = StatsService.totalReadingTime(stats);
-  const longestDay = StatsService.longestDay(stats);
-  const last7DaysReadTime = StatsService.last7DaysReadTime(stats);
+  const allStats = await StatsRepository.getAll();
+  const perMonth = StatsService.getPerMonthReadingTime(allStats);
+  const perDayOfTheWeek = StatsService.perDayOfTheWeek(allStats);
+  const mostPagesInADay = StatsService.mostPagesInADay(books, allStats);
+  const totalReadingTime = StatsService.totalReadingTime(allStats);
+  const longestDay = StatsService.longestDay(allStats);
+  const last7DaysReadTime = StatsService.last7DaysReadTime(allStats);
 
-  const response: GetAllStatsResponse = {
-    stats,
+  const response = {
+    stats: allStats,
     perMonth,
     perDayOfTheWeek,
     mostPagesInADay,
@@ -32,16 +31,16 @@ router.get('/', async (_: Request, res: Response) => {
     totalPagesRead,
   };
 
-  res.status(200).json(response);
+  return c.json(response);
 });
 
 /**
  * Get stats by book md5
  */
-router.get('/:book_md5', async (req: Request<{ book_md5: string }>, res: Response) => {
-  const book_md5 = req.params.book_md5;
-  const book = await StatsRepository.getByBookMD5(book_md5);
-  res.status(200).json(book);
+stats.get('/:book_md5', async (c) => {
+  const book_md5 = c.req.param('book_md5');
+  const bookStats = await StatsRepository.getByBookMD5(book_md5);
+  return c.json(bookStats);
 });
 
-export { router as statsRouter };
+export { stats as statsRouter };

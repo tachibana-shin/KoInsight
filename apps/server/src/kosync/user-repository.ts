@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
-import { db } from '../knex';
+import { db } from '../db';
+import * as schema from '../db/schema';
 import { User } from '@koinsight/common/types/user';
+import { eq } from 'drizzle-orm';
 
 const SALT_ROUNDS = 12;
 
@@ -17,26 +19,34 @@ export class UserExistsError extends Error {
 
 export class UserRepository {
   static async login(username: string, password: string): Promise<User | null> {
-    const user = await db('User').where({ username }).first();
+    const [user] = await db.select().from(schema.user).where(eq(schema.user.username, username));
     if (!user) {
       return null;
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return null;
     }
 
-    return user;
+    return {
+      ...user,
+      password_hash: user.passwordHash,
+      created_at: user.createdAt,
+      updated_at: user.updatedAt,
+    };
   }
 
   static async createUser(username: string, password: string): Promise<void> {
-    const existingUser = await db('User').where({ username }).first();
+    const [existingUser] = await db.select().from(schema.user).where(eq(schema.user.username, username));
 
     if (existingUser) {
       throw new UserExistsError();
     }
 
     const passwordHash = await hashPassword(password);
-    await db('User').insert({ username, password_hash: passwordHash });
+    await db.insert(schema.user).values({
+      username,
+      passwordHash: passwordHash
+    });
   }
 }

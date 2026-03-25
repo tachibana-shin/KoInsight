@@ -1,54 +1,42 @@
-import { Progress } from '@koinsight/common/types/progress';
-import { Request, Response, Router } from 'express';
+import { Hono } from 'hono';
 import { authenticate } from './kosync-authenticate-middleware';
 import { KosyncRepository } from './kosync-repository';
 import { UserExistsError, UserRepository } from './user-repository';
 
-const router = Router();
+const kosync = new Hono();
 
 /**
- *  KoSync API
- * "path" : "/users/create",
- * "method" : "POST",
- * "required_params" : [
- *     "username",
- *     "password",
- * ],
- * "payload" : [
- *     "username",
- *     "password",
- * ],
- * "expected_status" : [201, 402]
+ *  KoSync API: User Creation
  */
-router.post('/users/create', async (req: Request, res: Response) => {
-  const { username, password } = req.body;
+kosync.post('/users/create', async (c) => {
+  const { username, password } = await c.req.json();
 
   if (!username || !password) {
-    res.status(400).json({ error: 'Username and password are required' });
-    return;
+    return c.json({ error: 'Username and password are required' }, 400);
   }
   try {
     await UserRepository.createUser(username, password);
   } catch (error) {
     if (error instanceof UserExistsError) {
-      res.status(402).json({ error: 'User already exists' });
+      return c.json({ error: 'User already exists' }, 402);
     } else {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error(error);
+      return c.json({ error: 'Internal server error' }, 500);
     }
-    console.error(error);
-    return;
   }
 
-  res.status(201).json({ message: 'User created successfully' });
+  return c.json({ message: 'User created successfully' }, 201);
 });
 
-router.get('/users/auth', async (req: Request, res: Response) => {
-  const username = req.header('x-auth-user');
-  const password = req.header('x-auth-key');
+/**
+ * KoSync API: Auth check
+ */
+kosync.get('/users/auth', async (c) => {
+  const username = c.req.header('x-auth-user');
+  const password = c.req.header('x-auth-key');
 
   if (!username || !password) {
-    res.status(400).json({ error: 'Invalid request' });
-    return;
+    return c.json({ error: 'Invalid request' }, 400);
   }
 
   let user = null;
@@ -57,103 +45,63 @@ router.get('/users/auth', async (req: Request, res: Response) => {
   } catch (error) {}
 
   if (!user) {
-    res.status(401).json({ error: 'Unauthorized' });
+    return c.json({ error: 'Unauthorized' }, 401);
   } else {
-    res.status(200).json({ authorized: 'OK' });
+    return c.json({ authorized: 'OK' });
   }
 });
 
 /**
- * KoSync API
- *
- * "path" : "/syncs/progress",
- * "method" : "PUT",
- * "required_params" : [
- *     "document",
- *     "progress",
- *     "percentage",
- *     "device",
- *     "device_id",
- * ],
- * "payload" : [
- *     "document",
- *     "progress",
- *     "percentage",
- *     "device",
- *     "device_id",
- * ],
- * "expected_status" : [200, 202, 401]
+ * KoSync API: Update progress
  */
-router.put('/syncs/progress', authenticate, async (req: Request, res: Response) => {
-  const { document, progress, percentage, device, device_id } = req.body;
-
-  if (!req.user) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+kosync.put('/syncs/progress', authenticate, async (c) => {
+  const { document, progress, percentage, device, device_id } = await c.req.json();
+  const user = c.get('user');
 
   if (!document || !progress || !percentage || !device || !device_id) {
-    res.status(400).json({ error: 'All fields are required' });
-    return;
+    return c.json({ error: 'All fields are required' }, 400);
   }
 
-  let insertedProgress: Partial<Progress> | undefined;
   try {
-    insertedProgress = await KosyncRepository.upsert(req.user.id, {
+    const insertedProgress = await KosyncRepository.upsert(user.id, {
       document,
       progress,
       percentage,
       device,
       device_id,
     });
+    return c.json(insertedProgress);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    return c.json({ error: 'Internal server error' }, 500);
   }
-
-  res.status(200).json(insertedProgress);
 });
 
 /**
- * KoSync API
- *
- * "path" : "/syncs/progress/:document",
- * "method" : "GET",
- * "required_params" : [
- *     "document",
- * ],
- * "expected_status" : [200, 401]
+ * KoSync API: Get progress for document
  */
-router.get(
-  '/syncs/progress/:document',
-  authenticate,
-  async (req: Request<{ document: string }>, res: Response) => {
-    const document = req.params.document;
-    const user = req.user;
+kosync.get('/syncs/progress/:document', authenticate, async (c) => {
+  const document = c.req.param('document');
+  const user = c.get('user');
 
-    if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    if (!document) {
-      res.status(400).json({ error: 'Document is required' });
-      return;
-    }
-
-    const progress = await KosyncRepository.getByUserIdAndDocument(user.id, document);
-    if (!progress) {
-      res.status(404).json({ error: 'Progress not found' });
-      return;
-    }
-
-    res.status(200).json(progress);
+  if (!document) {
+    return c.json({ error: 'Document is required' }, 400);
   }
-);
 
-router.get('/syncs/progress', async (req: Request, res: Response) => {
-  const progresses = await KosyncRepository.getAll();
-  res.status(200).json(progresses);
+  const progress = await KosyncRepository.getByUserIdAndDocument(user.id, document);
+  if (!progress) {
+    return c.json({ error: 'Progress not found' }, 404);
+  }
+
+  return c.json(progress);
 });
 
-export { router as kosyncRouter };
+/**
+ * Get all progresses
+ */
+kosync.get('/syncs/progress', async (c) => {
+  const progresses = await KosyncRepository.getAll();
+  return c.json(progresses);
+});
+
+export { kosync as kosyncRouter };

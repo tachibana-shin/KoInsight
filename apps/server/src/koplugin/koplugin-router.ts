@@ -3,99 +3,88 @@ import { KoReaderBook } from '@koinsight/common/types/book';
 import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
 import archiver from 'archiver';
-import { NextFunction, Request, Response, Router } from 'express';
+import { Hono, Context, Next } from 'hono';
 import path from 'path';
+import { streamText } from 'hono/streaming';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
 
-// Router for KoInsight koreader plugin
-const router = Router();
+const koplugin = new Hono();
 
 export const REQUIRED_PLUGIN_VERSION = '0.3.0';
 
-const rejectOldPluginVersion = (req: Request, res: Response, next: NextFunction) => {
-  const { version } = req.body;
+const rejectOldPluginVersion = async (c: Context, next: Next) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { version } = body;
+  // Store body for later use since we consumed it
+  c.set('body', body);
 
   if (!version || version !== REQUIRED_PLUGIN_VERSION) {
-    res.status(400).json({
-      error: `Unsupported plugin version. Version must be ${REQUIRED_PLUGIN_VERSION}. Please update your KOReader koinsight.koplugin`,
-    });
-    return;
+    return c.json(
+      {
+        error: `Unsupported plugin version. Version must be ${REQUIRED_PLUGIN_VERSION}. Please update your KOReader koinsight.koplugin`,
+      },
+      400
+    );
   }
-
-  next();
+  await next();
 };
 
-router.post('/device', rejectOldPluginVersion, async (req, res) => {
-  const { id, model } = req.body;
+koplugin.post('/device', rejectOldPluginVersion, async (c) => {
+  const { id, model } = c.get('body');
 
   if (!id || !model) {
-    res.status(400).json({ error: 'Missing device ID or model' });
-    return;
+    return c.json({ error: 'Missing device ID or model' }, 400);
   }
 
   const device: Device = { id, model };
-
   try {
-    console.debug('Registering device:', device);
     await DeviceRepository.insertIfNotExists(device);
-    res.status(200).json({ message: 'Device registered successfully' });
+    return c.json({ message: 'Device registered successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error registering device' });
+    return c.json({ error: 'Error registering device' }, 500);
   }
 });
 
-router.post('/import', rejectOldPluginVersion, async (req, res) => {
-  const contentLength = req.headers['content-length'];
-  console.warn(`[${req.method}] ${req.url} — Content-Length: ${contentLength || 'unknown'} bytes`);
-
-  const koreaderBooks: KoReaderBook[] = req.body.books;
-  const newPageStats: PageStat[] = req.body.stats;
-  const annotations: Record<string, KoReaderAnnotation[]> = req.body.annotations || {};
-  const deviceId: string | undefined = req.body.device_id; // For annotation sync path
+koplugin.post('/import', rejectOldPluginVersion, async (c) => {
+  const body = c.get('body');
+  const koreaderBooks: KoReaderBook[] = body.books;
+  const newPageStats: PageStat[] = body.stats;
+  const annotations: Record<string, KoReaderAnnotation[]> = body.annotations || {};
+  const deviceId: string | undefined = body.device_id;
 
   try {
-    console.debug('Importing books:', koreaderBooks);
-    console.debug('Importing page stats:', newPageStats);
-    console.debug(
-      'Importing annotations:',
-      Object.keys(annotations).length,
-      'books with annotations'
-    );
-
     await UploadService.uploadStatisticData(koreaderBooks, newPageStats, annotations, deviceId);
-    res.status(200).json({ message: 'Upload successful' });
+    return c.json({ message: 'Upload successful' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error importing data' });
+    return c.json({ error: 'Error importing data' }, 500);
   }
 });
 
-// TODO: implement check in koreader plugin
-router.get('/health', rejectOldPluginVersion, async (_, res) => {
-  res.status(200).json({ message: 'Plugin is healthy' });
+koplugin.get('/health', rejectOldPluginVersion, async (c) => {
+  return c.json({ message: 'Plugin is healthy' });
 });
 
-router.get('/download', (_, res) => {
+koplugin.get('/download', (c) => {
   const folderPath = path.join(__dirname, '../../../../', 'plugins');
   const archive = archiver('zip', { zlib: { level: 9 } });
 
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
+  c.header('Content-Type', 'application/zip');
+  c.header('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
 
-  archive.on('error', (err) => {
-    console.error('Archive error:', err);
-    res.status(500).send('Error creating zip');
+  return streamText(c, async (stream) => {
+    archive.on('data', (chunk: Buffer) => stream.write(chunk));
+    archive.on('end', () => stream.close());
+    archive.on('error', (err: Error) => {
+      console.error('Archive error:', err);
+      stream.close();
+    });
+
+    archive.directory(folderPath, false);
+    archive.finalize();
   });
-
-  // Pipe the archive directly to the response
-  archive.pipe(res);
-
-  // Add folder contents to the archive
-  archive.directory(folderPath, false);
-
-  archive.finalize();
 });
 
-export { router as kopluginRouter };
+export { koplugin as kopluginRouter };

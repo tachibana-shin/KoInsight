@@ -1,85 +1,64 @@
-import { NextFunction, Request, Response, Router } from 'express';
-import { unlink } from 'fs';
-import multer from 'multer';
-import { appConfig } from '../../config';
+import { Hono } from 'hono';
+import { ImageUploadService } from '../../upload/image-upload-service';
 import { getBookById } from '../get-book-by-id-middleware';
 import { CoversService } from './covers-service';
 
-const router = Router({ mergeParams: true });
+const covers = new Hono();
+
+const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif'];
 
 /**
- * Fetches a book cover by book id
+ * GET /:bookId/cover — serve cover from Flickr/Imgur URL or WebDAV file
  */
-router.get('/', getBookById, async (req: Request, res: Response) => {
-  const book = req.book!;
+covers.get('/', getBookById, async (c) => {
+  const book = c.get('book');
+
+  if (book.coverUrl) {
+    return c.redirect(book.coverUrl);
+  }
 
   try {
-    const coverPath = await CoversService.get(book);
-    if (coverPath) {
-      res.sendFile(coverPath);
+    const cover = await CoversService.get(book);
+    if (cover) {
+      return c.body(new Uint8Array(cover.buffer), 200, { 'Content-Type': cover.mime });
     } else {
-      res.status(404).send({ error: 'Cover not found' });
+      return c.json({ error: 'Cover not found' }, 404);
     }
   } catch (error) {
     console.error('Error fetching cover:', error);
-    res.status(500).send({ error: 'Error fetching cover' });
+    return c.json({ error: 'Error fetching cover' }, 500);
   }
-});
-
-const upload = multer({
-  dest: appConfig.coversPath,
-  fileFilter: (_req, file, cb) => {
-    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif'];
-    if (
-      file.mimetype === 'application/octet-stream' ||
-      allowedExtensions.some((ext) => file.originalname.endsWith(ext))
-    ) {
-      cb(null, true); // Accept the file
-    } else {
-      cb(new Error(`Only ${allowedExtensions.join(', ')} files are allowed`));
-    }
-  },
-  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 /**
- * Uploads a book cover by book id
+ * POST /:bookId/cover — upload cover via Flickr/Imgur (or WebDAV fallback)
  */
-router.post(
-  '/',
-  getBookById,
-  async (req: Request, _res: Response, next: NextFunction) => {
-    console.debug('Deleting existing cover for book', req.book!.md5);
-    await CoversService.deleteExisting(req.book!);
-    next();
-  },
-  upload.single('file'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    const book = req.book!;
-    const file = req.file;
+covers.post('/', getBookById, async (c) => {
+  const book = c.get('book');
+  const body = await c.req.parseBody();
+  const file = body['file'];
 
-    if (!file) {
-      res.status(400).json({ error: 'Missing file upload' });
-      return next();
-    }
-
-    try {
-      await CoversService.upload(book, file);
-
-      res.send({ message: 'Cover updated' });
-    } catch (error) {
-      // Cleanup uploaded file if there's an error
-      if (file?.path) {
-        try {
-          unlink(file.path, () => {});
-        } catch (_) {
-          // ignore cleanup errors
-        }
-      }
-      console.log('Error uploading cover:', error);
-      res.status(500).send({ message: 'Unable to update cover' });
-    }
+  if (!(file instanceof File)) {
+    return c.json({ error: 'Missing file upload' }, 400);
   }
-);
 
-export { router as coversRouter };
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return c.json({ error: `Only ${ALLOWED_EXTENSIONS.join(', ')} files are allowed` }, 400);
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return c.json({ error: 'File too large (max 10MB)' }, 413);
+  }
+
+  try {
+    await CoversService.deleteExisting(book);
+    await ImageUploadService.uploadBookCover(book, file);
+    return c.json({ message: 'Cover updated', provider: ImageUploadService.getProvider() });
+  } catch (error) {
+    console.error('Error uploading cover:', error);
+    return c.json({ message: 'Unable to update cover' }, 500);
+  }
+});
+
+export { covers as coversRouter };

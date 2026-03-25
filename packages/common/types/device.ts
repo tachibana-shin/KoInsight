@@ -1,4 +1,3 @@
-export type Device = {
-  id: string;
-  model: string;
-};
+import { device } from '../db/schema';
+
+export type Device = typeof device.$inferSelect;

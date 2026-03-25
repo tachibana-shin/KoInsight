@@ -1,5 +1,3 @@
-export type User = {
-  id: number;
-  username: string;
-  password_hash: string;
-};
+import { user } from '../db/schema';
+
+export type User = typeof user.$inferSelect;
