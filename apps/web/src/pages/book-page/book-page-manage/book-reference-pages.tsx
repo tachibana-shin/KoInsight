@@ -9,7 +9,7 @@ export type BookReferencePagesProps = {
 };
 
 export function BookReferencePages({ book }: BookReferencePagesProps) {
-  const [referencePages, setReferencePages] = useState(book.reference_pages ?? 0);
+  const [referencePages, setReferencePages] = useState(book.referencePages ?? 0);
 
   const [updateLoading, setUpdateLoading] = useState(false);
 
@@ -24,6 +24,7 @@ export function BookReferencePages({ book }: BookReferencePagesProps) {
         position: 'top-center',
       });
     } catch (error) {
+      console.warn(error)
       notifications.show({
         title: 'Failed to update reference page count',
         message: '',

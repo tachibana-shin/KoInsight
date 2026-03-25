@@ -40,6 +40,7 @@ export function BookHide({ book }: BookHideProps) {
         position: 'top-center',
       });
     } catch (error) {
+      console.warn(error)
       notifications.show({
         title: `Failed to ${hidden ? 'hide' : 'show'} the book`,
         message: `Failed to ${hidden ? 'hide' : 'show'} the book.`,
@@ -62,7 +63,7 @@ export function BookHide({ book }: BookHideProps) {
       <Switch
         disabled={hideLoading}
         label="Hide book"
-        checked={book.soft_deleted}
+        checked={book.softDeletedAt !== null}
         onChange={(e) => onUpdate(e.target.checked)}
       ></Switch>
     </div>

@@ -61,7 +61,7 @@ export class WebDavService {
         return contents.map((item: any) => item.basename);
       }
       return [];
-    } catch (e) {
+    } catch {
       return [];
     }
   }

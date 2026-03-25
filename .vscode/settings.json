@@ -5,5 +5,8 @@
     "**/common/**": "Common · ${filename}.${extname}",
     "**/web/**": "FE · ${filename}.${extname}"
   },
-  "typescript.preferences.importModuleSpecifier": "relative"
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  }
 }

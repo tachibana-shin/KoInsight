@@ -7,13 +7,13 @@
   "scripts": {
     "start": "node dist/index.node.js",
     "build": "tsc -b",
-    "build:migrations": "tsc -p tsconfig.migrations.json",
     "dev": "bun --watch src/index.node.ts",
     "dev:wrangler": "wrangler dev",
     "dev:netlify": "netlify dev",
-    "test": "npm run build:migrations && vitest run",
-    "test:watch": "npm run build:migrations && vitest",
-    "test:coverage": "npm run build:migrations && vitest run --coverage"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
@@ -44,6 +44,9 @@
     "@vitest/ui": "4.0.16",
     "drizzle-kit": "^0.31.10",
     "nodemon": "3.1.11",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "oxlint-tsgolint": "^0.17.4",
     "supertest": "7.1.4",
     "ts-node": "10.9.2",
     "tsx": "4.21.0",

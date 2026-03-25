@@ -2,15 +2,15 @@ import { BookWithData } from '@koinsight/common/types';
 import { Book } from '@koinsight/common/types/book';
 import { BookDevice } from '@koinsight/common/types/book-device';
 import { Genre } from '@koinsight/common/types/genre';
+import { eq, isNull, like, sql } from 'drizzle-orm';
+import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { sum } from 'ramda';
-import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
-import { GenreRepository } from '../genres/genre-repository';
+import { AnnotationsRepository } from '../annotations/AnnotationsRepository';
+import { StatsRepository } from '../stats/StatsRepository';
 import { DB } from '../db';
 import * as schema from '../db/schema';
-import { StatsRepository } from 'src/stats/StatsRepository';
+import { GenreRepository } from '../genres/genre-repository';
 import { BooksService } from './books-service';
-import { eq, and, isNull, like, sql, InferInsertModel } from 'drizzle-orm';
-import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 
 export class BooksRepository {
   static async getAll(db: DB): Promise<Book[]> {
@@ -27,12 +27,17 @@ export class BooksRepository {
     await db.insert(schema.book).values(book);
   }
 
-  static async update(db: DB, id: number, data: PgUpdateSetSource<typeof schema.book>): Promise<void> {
+  static async update(
+    db: DB,
+    id: number,
+    data: PgUpdateSetSource<typeof schema.book>
+  ): Promise<void> {
     await db.update(schema.book).set(data).where(eq(schema.book.id, id));
   }
 
   static async softDelete(db: DB, id: number, soft_deleted = true): Promise<void> {
-    await db.update(schema.book)
+    await db
+      .update(schema.book)
       .set({ softDeletedAt: soft_deleted ? new Date() : null })
       .where(eq(schema.book.id, id));
   }
@@ -46,41 +51,48 @@ export class BooksRepository {
   }
 
   static async searchByTitle(db: DB, title: string): Promise<Book[]> {
-    const result = await db.select().from(schema.book).where(like(schema.book.title, `%${title}%`));
+    const result = await db
+      .select()
+      .from(schema.book)
+      .where(like(schema.book.title, `%${title}%`));
     return result;
   }
 
   static async getBookDevices(db: DB, md5: Book['md5']): Promise<BookDevice[]> {
-    const result = await db.select().from(schema.bookDevice).where(eq(schema.bookDevice.bookMd5, md5));
+    const result = await db
+      .select()
+      .from(schema.bookDevice)
+      .where(eq(schema.bookDevice.bookMd5, md5));
     return result;
   }
 
   static async getAllWithData(db: DB, returnDeleted: boolean = false): Promise<BookWithData[]> {
     // In Postgres, we use json_agg and json_build_object.
     // Drizzle can do this with sql chunks.
-    const books = await db.select({
-      id: schema.book.id,
-      md5: schema.book.md5,
-      title: schema.book.title,
-      authors: schema.book.authors,
-      notes: schema.book.notes,
-      lastOpen: schema.book.lastOpen,
-      highlights: schema.book.highlights,
-      pages: schema.book.pages,
-      series: schema.book.series,
-      language: schema.book.language,
-      totalReadTime: schema.book.totalReadTime,
-      totalReadPages: schema.book.totalReadPages,
-      softDeletedAt: schema.book.softDeletedAt,
-      referencePages: schema.book.referencePages,
-      coverUrl: schema.book.coverUrl,
-      genres: sql<string>`(
+    const books = await db
+      .select({
+        id: schema.book.id,
+        md5: schema.book.md5,
+        title: schema.book.title,
+        authors: schema.book.authors,
+        notes: schema.book.notes,
+        lastOpen: schema.book.lastOpen,
+        highlights: schema.book.highlights,
+        pages: schema.book.pages,
+        series: schema.book.series,
+        language: schema.book.language,
+        totalReadTime: schema.book.totalReadTime,
+        totalReadPages: schema.book.totalReadPages,
+        softDeletedAt: schema.book.softDeletedAt,
+        referencePages: schema.book.referencePages,
+        coverUrl: schema.book.coverUrl,
+        genres: sql<string>`(
         SELECT json_agg(json_build_object('id', g.id, 'name', g.name))
         FROM ${schema.bookGenre} bg
         JOIN ${schema.genre} g ON g.id = bg.genre_id
         WHERE bg.book_md5 = ${schema.book.md5}
       )`,
-      book_devices: sql<string>`(
+        book_devices: sql<string>`(
         SELECT json_agg(json_build_object(
           'id', bd.id,
           'device_id', bd.device_id,
@@ -93,8 +105,8 @@ export class BooksRepository {
         ))
         FROM ${schema.bookDevice} bd
         WHERE bd.book_md5 = ${schema.book.md5}
-      )`
-    })
+      )`,
+      })
       .from(schema.book)
       .where(returnDeleted ? sql`true` : isNull(schema.book.softDeletedAt));
 
@@ -108,7 +120,7 @@ export class BooksRepository {
         const bookDevices = (book.book_devices || []) as BookDevice[];
 
         // Normalize bookDevices keys from DB (snake_case from json_build_object)
-        const normalizedDevices = bookDevices.map(d => ({
+        const normalizedDevices = bookDevices.map((d) => ({
           ...d,
           book_md5: book.md5,
         }));
@@ -147,7 +159,10 @@ export class BooksRepository {
   static async addGenre(db: DB, md5: Book['md5'], genreName: string) {
     const genre = await GenreRepository.findOrCreate(db, { name: genreName });
     if (!genre) return;
-    await db.insert(schema.bookGenre).values({ bookMd5: md5, genreId: genre.id }).onConflictDoNothing();
+    await db
+      .insert(schema.bookGenre)
+      .values({ bookMd5: md5, genreId: genre.id })
+      .onConflictDoNothing();
   }
 
   static async setReferencePages(db: DB, id: number, referencePages: number | null) {

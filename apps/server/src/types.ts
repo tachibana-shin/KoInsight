@@ -12,4 +12,4 @@ export type Variables = {
   user?: User;
 };
 
-export type AppContext = { Bindings: Bindings, Variables: Variables };
+export type AppContext = { Bindings: Bindings; Variables: Variables };

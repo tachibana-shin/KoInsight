@@ -149,12 +149,8 @@
           "name": "annotation_book_md5_book_md5_fk",
           "tableFrom": "annotation",
           "tableTo": "book",
-          "columnsFrom": [
-            "book_md5"
-          ],
-          "columnsTo": [
-            "md5"
-          ],
+          "columnsFrom": ["book_md5"],
+          "columnsTo": ["md5"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -162,12 +158,8 @@
           "name": "annotation_device_id_device_id_fk",
           "tableFrom": "annotation",
           "tableTo": "device",
-          "columnsFrom": [
-            "device_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["device_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -177,12 +169,7 @@
         "annotation_book_md5_device_id_page_ref_datetime_unique": {
           "name": "annotation_book_md5_device_id_page_ref_datetime_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "book_md5",
-            "device_id",
-            "page_ref",
-            "datetime"
-          ]
+          "columns": ["book_md5", "device_id", "page_ref", "datetime"]
         }
       },
       "policies": {},
@@ -298,9 +285,7 @@
         "book_md5_unique": {
           "name": "book_md5_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "md5"
-          ]
+          "columns": ["md5"]
         }
       },
       "policies": {},
@@ -378,12 +363,8 @@
           "name": "book_device_book_md5_book_md5_fk",
           "tableFrom": "book_device",
           "tableTo": "book",
-          "columnsFrom": [
-            "book_md5"
-          ],
-          "columnsTo": [
-            "md5"
-          ],
+          "columnsFrom": ["book_md5"],
+          "columnsTo": ["md5"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -391,12 +372,8 @@
           "name": "book_device_device_id_device_id_fk",
           "tableFrom": "book_device",
           "tableTo": "device",
-          "columnsFrom": [
-            "device_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["device_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -406,10 +383,7 @@
         "book_device_book_md5_device_id_unique": {
           "name": "book_device_book_md5_device_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "book_md5",
-            "device_id"
-          ]
+          "columns": ["book_md5", "device_id"]
         }
       },
       "policies": {},
@@ -439,12 +413,8 @@
           "name": "book_genre_genre_id_genre_id_fk",
           "tableFrom": "book_genre",
           "tableTo": "genre",
-          "columnsFrom": [
-            "genre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["genre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -452,12 +422,8 @@
           "name": "book_genre_book_md5_book_md5_fk",
           "tableFrom": "book_genre",
           "tableTo": "book",
-          "columnsFrom": [
-            "book_md5"
-          ],
-          "columnsTo": [
-            "md5"
-          ],
+          "columnsFrom": ["book_md5"],
+          "columnsTo": ["md5"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -467,10 +433,7 @@
         "book_genre_book_md5_genre_id_unique": {
           "name": "book_genre_book_md5_genre_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "book_md5",
-            "genre_id"
-          ]
+          "columns": ["book_md5", "genre_id"]
         }
       },
       "policies": {},
@@ -526,9 +489,7 @@
         "genre_name_unique": {
           "name": "genre_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -588,12 +549,8 @@
           "name": "page_stat_book_md5_book_md5_fk",
           "tableFrom": "page_stat",
           "tableTo": "book",
-          "columnsFrom": [
-            "book_md5"
-          ],
-          "columnsTo": [
-            "md5"
-          ],
+          "columnsFrom": ["book_md5"],
+          "columnsTo": ["md5"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -601,12 +558,8 @@
           "name": "page_stat_device_id_device_id_fk",
           "tableFrom": "page_stat",
           "tableTo": "device",
-          "columnsFrom": [
-            "device_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["device_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -616,12 +569,7 @@
         "page_stat_book_md5_device_id_page_start_time_unique": {
           "name": "page_stat_book_md5_device_id_page_start_time_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "book_md5",
-            "device_id",
-            "page",
-            "start_time"
-          ]
+          "columns": ["book_md5", "device_id", "page", "start_time"]
         }
       },
       "policies": {},
@@ -695,12 +643,8 @@
           "name": "progress_user_id_user_id_fk",
           "tableFrom": "progress",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -710,11 +654,7 @@
         "progress_user_id_document_device_id_unique": {
           "name": "progress_user_id_document_device_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "document",
-            "device_id"
-          ]
+          "columns": ["user_id", "document", "device_id"]
         }
       },
       "policies": {},
@@ -765,9 +705,7 @@
         "user_username_unique": {
           "name": "user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},

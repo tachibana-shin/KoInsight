@@ -203,13 +203,11 @@ describe('koplugin-router', () => {
     });
 
     it('returns 400 when plugin version is incorrect', async () => {
-      const response = await request(app)
-        .post('/koplugin/import')
-        .send({
-          version: '0.1.0',
-          books: [],
-          stats: [],
-        });
+      const response = await request(app).post('/koplugin/import').send({
+        version: '0.1.0',
+        books: [],
+        stats: [],
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('Unsupported plugin version');

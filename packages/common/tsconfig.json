@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "composite": true,
-    "declaration": true,
+    "declaration": true
   },
   "include": ["**/*.ts", "../../apps/server/src/db/schema.ts"],
   "exclude": ["node_modules", "dist"]

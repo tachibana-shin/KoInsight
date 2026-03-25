@@ -4,21 +4,21 @@ import {
   KoReaderPageStat,
   PageStat,
 } from '@koinsight/common/types';
-Object.defineProperty(globalThis, 'window', {
-  get: () => void 0
-})
-Object.defineProperty(globalThis, 'WorkerGlobalScope', {
-  get: () => void 0
-})
-Object.defineProperty(globalThis, '__dirname', {
-  get: () => '/'
-})
+import { and, eq, isNull } from 'drizzle-orm';
+import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import initSqlJs, { Database } from 'sql.js/dist/sql-asm.js';
-import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
+import { AnnotationsRepository } from '../annotations/AnnotationsRepository';
 import { DB } from '../db';
 import * as schema from '../db/schema';
-import { eq, and, sql, isNull } from 'drizzle-orm';
-import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
+Object.defineProperty(globalThis, 'window', {
+  get: () => void 0,
+});
+Object.defineProperty(globalThis, 'WorkerGlobalScope', {
+  get: () => void 0,
+});
+Object.defineProperty(globalThis, '__dirname', {
+  get: () => '/',
+});
 
 export class UploadService {
   private static UNKNOWN_DEVICE_ID = 'manual-upload';
@@ -83,7 +83,8 @@ export class UploadService {
 
       // Insert books
       for (const book of booksToImport) {
-        await tx.insert(schema.book)
+        await tx
+          .insert(schema.book)
           .values({
             md5: book.md5,
             title: book.title,
@@ -94,10 +95,14 @@ export class UploadService {
           .onConflictDoNothing({ target: schema.book.md5 });
       }
 
-      const deviceId = safePageStats.find((s) => s.deviceId)?.deviceId ?? deviceIdOverride ?? this.UNKNOWN_DEVICE_ID;
+      const deviceId =
+        safePageStats.find((s) => s.deviceId)?.deviceId ??
+        deviceIdOverride ??
+        this.UNKNOWN_DEVICE_ID;
 
       // Ensure device exists
-      await tx.insert(schema.device)
+      await tx
+        .insert(schema.device)
         .values({
           id: deviceId,
           model: deviceId === this.UNKNOWN_DEVICE_ID ? 'Manual Upload' : 'Unknown Model',
@@ -106,7 +111,8 @@ export class UploadService {
 
       // Update/Insert book_device
       for (const book of booksToImport) {
-        const last_open = Number.isFinite(book.last_open) && book.last_open > 0 ? book.last_open : 0;
+        const last_open =
+          Number.isFinite(book.last_open) && book.last_open > 0 ? book.last_open : 0;
         const total_read_time = (book.total_read_time ?? 0) > 0 ? book.total_read_time : 0;
         const total_read_pages = (book.total_read_pages ?? 0) > 0 ? book.total_read_pages : 0;
 
@@ -130,7 +136,8 @@ export class UploadService {
         if ((total_read_time ?? 0) > 0) updateData.totalReadTime = total_read_time;
         if ((total_read_pages ?? 0) > 0) updateData.totalReadPages = total_read_pages;
 
-        await tx.insert(schema.bookDevice)
+        await tx
+          .insert(schema.bookDevice)
           .values(values)
           .onConflictDoUpdate({
             target: [schema.bookDevice.bookMd5, schema.bookDevice.deviceId],
@@ -141,7 +148,8 @@ export class UploadService {
       // Insert page stats
       if (safePageStats.length > 0) {
         for (const stat of safePageStats) {
-          await tx.insert(schema.pageStat)
+          await tx
+            .insert(schema.pageStat)
             .values({
               bookMd5: stat.bookMd5,
               deviceId: deviceId,
@@ -151,7 +159,12 @@ export class UploadService {
               startTime: stat.startTime,
             })
             .onConflictDoUpdate({
-              target: [schema.pageStat.bookMd5, schema.pageStat.deviceId, schema.pageStat.page, schema.pageStat.startTime],
+              target: [
+                schema.pageStat.bookMd5,
+                schema.pageStat.deviceId,
+                schema.pageStat.page,
+                schema.pageStat.startTime,
+              ],
               set: {
                 duration: stat.duration,
                 totalPages: stat.totalPages,
@@ -177,16 +190,19 @@ export class UploadService {
     syncedAnnotations: KoReaderAnnotation[],
     tx: any
   ): Promise<void> {
-    const existingAnnotations = await tx.select({
-      pageRef: schema.annotation.pageRef,
-      datetime: schema.annotation.datetime,
-    })
+    const existingAnnotations = await tx
+      .select({
+        pageRef: schema.annotation.pageRef,
+        datetime: schema.annotation.datetime,
+      })
       .from(schema.annotation)
-      .where(and(
-        eq(schema.annotation.bookMd5, bookMd5),
-        eq(schema.annotation.deviceId, deviceId),
-        isNull(schema.annotation.deletedAt)
-      ));
+      .where(
+        and(
+          eq(schema.annotation.bookMd5, bookMd5),
+          eq(schema.annotation.deviceId, deviceId),
+          isNull(schema.annotation.deletedAt)
+        )
+      );
 
     const syncedIdentifiers = new Set(syncedAnnotations.map((a) => `${a.page}|${a.datetime}`));
 

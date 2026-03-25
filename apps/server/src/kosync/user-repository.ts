@@ -34,7 +34,10 @@ export class UserRepository {
   }
 
   static async createUser(db: DB, username: string, password: string): Promise<void> {
-    const [existingUser] = await db.select().from(schema.user).where(eq(schema.user.username, username));
+    const [existingUser] = await db
+      .select()
+      .from(schema.user)
+      .where(eq(schema.user.username, username));
 
     if (existingUser) {
       throw new UserExistsError();
@@ -43,7 +46,7 @@ export class UserRepository {
     const passwordHash = await hashPassword(password);
     await db.insert(schema.user).values({
       username,
-      passwordHash: passwordHash
+      passwordHash: passwordHash,
     });
   }
 }

@@ -30,6 +30,7 @@ Before you begin, ensure you have the following installed:
 ### Recommended Tools
 
 - **nvm** (Node Version Manager) - Makes it easy to switch between Node versions
+
   ```bash
   # Install nvm (macOS/Linux)
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -59,6 +60,7 @@ npm install
 ```
 
 This will install dependencies for:
+
 - Root workspace (build tools, Prettier, Turbo)
 - `apps/server` (Express backend)
 - `apps/web` (React frontend)
@@ -84,6 +86,7 @@ npm run seed
 ```
 
 This creates:
+
 - 5 e-reader devices
 - 10 books (popular fantasy/sci-fi titles)
 - Realistic reading statistics and page data
@@ -92,6 +95,7 @@ This creates:
 - 3 test users with KoSync progress data
 
 **Test User Credentials:**
+
 - Username: `reader1`, `reader2`, `bookworm`
 - Password: `password123` (all users)
 
@@ -112,27 +116,31 @@ npm run dev
 ```
 
 This uses Turbo to run both apps in parallel:
+
 - **Backend server**: http://localhost:3000 (Express API)
 - **Frontend web app**: http://localhost:5173 (Vite dev server)
 
 #### Option 2: Run Apps Individually
 
 **Backend only:**
+
 ```bash
 cd apps/server
 npm run dev
 ```
+
 - Runs on http://localhost:3001
 - Watches for TypeScript changes and auto-restarts
 
 **Frontend only:**
+
 ```bash
 cd apps/web
 npm run dev
 ```
+
 - Runs on http://localhost:3000
 - Hot module replacement enabled
-
 
 ### Development Tips
 
@@ -141,10 +149,10 @@ npm run dev
 3. **TypeScript**: Changes to TypeScript files trigger automatic recompilation
 4. **Shared types**: The `@koinsight/common` package contains types shared between frontend and backend
 
-
 ## Key Technologies
 
 **Backend:**
+
 - Hono - Web framework
 - Drizzle ORM - TypeScript ORM
 - sql.js - SQLite WASM for parsing uploads
@@ -153,6 +161,7 @@ npm run dev
 - Zod - Schema validation
 
 **Frontend:**
+
 - React 18.x - UI library
 - Vite - Build tool and dev server
 - Mantine UI - Component library
@@ -161,11 +170,11 @@ npm run dev
 - Recharts - Data visualization
 
 **Development:**
+
 - TypeScript - Type safety
 - Turbo - Monorepo build system
 - Prettier - Code formatting
 - Vitest - Unit testing
-
 
 ## Project Structure
 
@@ -233,17 +242,16 @@ npm run seed
 
 **What gets seeded:**
 
-| Data Type | Count | Description |
-|-----------|-------|-------------|
-| Devices | 5 | Kindle, Kobo, Nook, iPad, Android Tablet |
-| Books | 10 | Popular fantasy/sci-fi titles |
-| Book-Device Associations | 50 | Each book on each device |
-| Page Statistics | ~1,800 | Reading progress over last 100 days |
-| Annotations | ~200 | Highlights, notes, and bookmarks |
-| Genres | 14 | Fantasy, Sci-Fi, etc. with book associations |
-| Users | 3 | Test accounts (password: `password123`) |
-| Progress Records | ~13 | KoSync reading progress |
-
+| Data Type                | Count  | Description                                  |
+| ------------------------ | ------ | -------------------------------------------- |
+| Devices                  | 5      | Kindle, Kobo, Nook, iPad, Android Tablet     |
+| Books                    | 10     | Popular fantasy/sci-fi titles                |
+| Book-Device Associations | 50     | Each book on each device                     |
+| Page Statistics          | ~1,800 | Reading progress over last 100 days          |
+| Annotations              | ~200   | Highlights, notes, and bookmarks             |
+| Genres                   | 14     | Fantasy, Sci-Fi, etc. with book associations |
+| Users                    | 3      | Test accounts (password: `password123`)      |
+| Progress Records         | ~13    | KoSync reading progress                      |
 
 ### Advanced Knex Commands
 
@@ -296,9 +304,9 @@ npx prettier --check .
 ```
 
 **Editor Integration:**
+
 - [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 - Enable "Format on Save" for automatic formatting
-
 
 ## Testing
 

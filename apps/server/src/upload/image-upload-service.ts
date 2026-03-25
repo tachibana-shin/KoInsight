@@ -1,12 +1,12 @@
-import { ImgBBService } from './imgbb-service';
-import { FlickrService } from './flickr-service';
-import { ImgurService } from './imgur-service';
-import { appConfig } from '../config';
-import { CoversService } from '../books/covers/covers-service';
 import { Book } from '@koinsight/common/types/book';
+import { eq } from 'drizzle-orm';
+import { CoversService } from '../books/covers/covers-service';
+import { appConfig } from '../config';
 import { DB } from '../db';
 import * as schema from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { FlickrService } from './flickr-service';
+import { ImgBBService } from './imgbb-service';
+import { ImgurService } from './imgur-service';
 
 /**
  * Centralized image upload with automatic provider priority:
@@ -31,10 +31,14 @@ export class ImageUploadService {
     console.info(`[ImageUpload] Using provider: ${provider}`);
 
     switch (provider) {
-      case 'imgbb': return ImgBBService.uploadImage(imageBuffer, title);
-      case 'flickr': return FlickrService.uploadImage(imageBuffer, title);
-      case 'imgur': return ImgurService.uploadImage(imageBuffer);
-      default: return '';
+      case 'imgbb':
+        return ImgBBService.uploadImage(imageBuffer, title);
+      case 'flickr':
+        return FlickrService.uploadImage(imageBuffer, title);
+      case 'imgur':
+        return ImgurService.uploadImage(imageBuffer);
+      default:
+        return '';
     }
   }
 

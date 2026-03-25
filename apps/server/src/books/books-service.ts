@@ -1,12 +1,12 @@
 import { Book, BookWithData, PageStat } from '@koinsight/common/types';
 import { BookDevice } from '@koinsight/common/types/book-device';
 import { startOfDay } from 'date-fns';
-import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
+import { AnnotationsRepository } from '../annotations/AnnotationsRepository';
+import { DB } from '../db';
 import { GenreRepository } from '../genres/genre-repository';
-import { StatsRepository } from 'src/stats/StatsRepository';
+import { StatsRepository } from '../stats/StatsRepository';
 import { normalizeRanges, Range, totalRangeLength } from '../utils/ranges';
 import { BooksRepository } from './books-repository';
-import { DB } from '../db';
 
 export class BooksService {
   static getTotalPages(book: Book, bookDevices: BookDevice[]): number {
@@ -17,7 +17,7 @@ export class BooksService {
 
   static getTotalReadTime(bookDevices: BookDevice[]): number {
     return bookDevices.reduce((acc, device) => {
-      const time = device.totalReadTime
+      const time = device.totalReadTime;
       return acc + (time || 0);
     }, 0);
   }
@@ -29,7 +29,7 @@ export class BooksService {
 
   static getLastOpen(bookDevices: BookDevice[]): number {
     return bookDevices.reduce((acc, device) => {
-      const lastOpen = device.lastOpen
+      const lastOpen = device.lastOpen;
       return Math.max(acc, lastOpen || 0);
     }, 0);
   }
@@ -48,7 +48,7 @@ export class BooksService {
 
   static getUniqueReadPages(book: Book, stats: PageStat[]): number {
     const readPages: Range[] = [];
-    const refPages = book.referencePages
+    const refPages = book.referencePages;
 
     stats.forEach((stat) => {
       if (refPages) {
@@ -67,7 +67,7 @@ export class BooksService {
   }
 
   static getTotalReadPages(book: Book, stats: PageStat[]): number {
-    const refPages = book.referencePages
+    const refPages = book.referencePages;
     return Math.round(
       stats.reduce((acc, stat) => {
         if (refPages) {
@@ -79,7 +79,7 @@ export class BooksService {
     );
   }
 
-  static async withData(db: DB, book: Book, includeDeleted = false): Promise<BookWithData> {
+  static async withData(db: DB, book: Book): Promise<BookWithData> {
     const stats = await StatsRepository.getByBookMD5(db, book.md5);
     // getBookDevices returns DbBookDevice[] now
     const bookDevices = await BooksRepository.getBookDevices(db, book.md5);
@@ -101,7 +101,6 @@ export class BooksService {
     // Map DbBook fields to Book fields if needed, but BookWithData allows both
     // Actually BookWithData extends Book (snake_case).
     // book is DbBook (camelCase) or Book.
-
 
     // We need to map DbBookDevice to BookDevice for the response property `device_data`
     // bookDevices is DbBookDevice[]

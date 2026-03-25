@@ -18,7 +18,10 @@ const koplugin = new Hono<{ Bindings: AppContext['Bindings']; Variables: Variabl
 
 export const REQUIRED_PLUGIN_VERSION = '0.3.0';
 
-const rejectOldPluginVersion = async (c: Context<{ Bindings: AppContext['Bindings']; Variables: Variables }>, next: Next) => {
+const rejectOldPluginVersion = async (
+  c: Context<{ Bindings: AppContext['Bindings']; Variables: Variables }>,
+  next: Next
+) => {
   const body = await c.req.json().catch(() => ({}));
   const { version } = body;
   // Store body for later use since we consumed it
@@ -86,11 +89,11 @@ koplugin.get('/download', (c) => {
     archive.on('end', () => stream.close());
     archive.on('error', (err: Error) => {
       console.error('Archive error:', err);
-      stream.close();
+      void stream.close();
     });
 
     archive.directory(folderPath, false);
-    archive.finalize();
+    await archive.finalize();
   });
 });
 

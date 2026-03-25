@@ -85,7 +85,7 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
               <Table.Td>{formatDate(stat.startTime, 'dd LLL yyyy, HH:mm:ss')}</Table.Td>
               <Table.Td>{formatSecondsToHumanReadable(stat.duration, false)}</Table.Td>
               <Table.Td>{stat.totalPages}</Table.Td>
-              <Table.Td>{devicesById[stat.deviceId ?? ""]?.model ?? stat.deviceId}</Table.Td>
+              <Table.Td>{devicesById[stat.deviceId ?? '']?.model ?? stat.deviceId}</Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>

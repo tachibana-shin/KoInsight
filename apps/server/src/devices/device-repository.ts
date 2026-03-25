@@ -23,16 +23,22 @@ export class DeviceRepository {
   }
 
   static async findOrCreateByModel(db: DB, model: string): Promise<Device> {
-    const [existingDevice] = await db.select().from(schema.device).where(eq(schema.device.model, model));
+    const [existingDevice] = await db
+      .select()
+      .from(schema.device)
+      .where(eq(schema.device.model, model));
 
     if (existingDevice) {
       return existingDevice;
     }
 
-    const [result] = await db.insert(schema.device).values({
-      id: crypto.randomUUID(), // Need an ID for Postgres if it's not provided
-      model
-    }).returning();
+    const [result] = await db
+      .insert(schema.device)
+      .values({
+        id: crypto.randomUUID(), // Need an ID for Postgres if it's not provided
+        model,
+      })
+      .returning();
 
     return result;
   }

@@ -66,7 +66,7 @@ export function CalendarPage(): JSX.Element {
             getDuration(
               sum(
                 data.events
-                   // book.md5 is not Book['md5'] but it's compatible
+                  // book.md5 is not Book['md5'] but it's compatible
                   .filter((event) => event.bookMd5 === book.md5)
                   .map((event) => event.duration)
               )

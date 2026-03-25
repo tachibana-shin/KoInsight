@@ -29,7 +29,7 @@ export class FlickrService {
       throw new Error('Flickr is not configured');
     }
 
-    const { apiKey, apiSecret, accessToken, tokenSecret, userId } = this.cfg;
+    const { apiKey, apiSecret, accessToken, tokenSecret } = this.cfg;
 
     // Build OAuth 1.0a signature
     const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -74,7 +74,11 @@ export class FlickrService {
         .join(', ');
 
     const formData = new FormData();
-    formData.append('photo', new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }), `${title}.jpg`);
+    formData.append(
+      'photo',
+      new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }),
+      `${title}.jpg`
+    );
     formData.append('title', title);
     formData.append('is_public', '1');
     formData.append('format', 'json');

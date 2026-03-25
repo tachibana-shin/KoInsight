@@ -16,14 +16,15 @@ export class GenreRepository {
   }
 
   static async getByBookMd5(db: DB, md5: string): Promise<Genre[]> {
-    const results = await db.select({
-      id: schema.genre.id,
-      name: schema.genre.name
-    })
-    .from(schema.genre)
-    .innerJoin(schema.bookGenre, eq(schema.bookGenre.genreId, schema.genre.id))
-    .where(eq(schema.bookGenre.bookMd5, md5));
-    
+    const results = await db
+      .select({
+        id: schema.genre.id,
+        name: schema.genre.name,
+      })
+      .from(schema.genre)
+      .innerJoin(schema.bookGenre, eq(schema.bookGenre.genreId, schema.genre.id))
+      .where(eq(schema.bookGenre.bookMd5, md5));
+
     return results;
   }
 

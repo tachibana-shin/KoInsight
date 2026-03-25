@@ -1,12 +1,8 @@
 {
   "name": "koinsight",
-  "private": true,
   "version": "0.2.2",
-  "packageManager": "npm@10.2.4",
+  "private": true,
   "license": "MIT",
-  "engines": {
-    "node": ">=22"
-  },
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -17,11 +13,17 @@
     "dev": "turbo run dev --parallel",
     "dev:server:wrangler": "npm --workspace=server run dev:wrangler",
     "dev:server:netlify": "npm --workspace=server run dev:netlify",
-    "seed": "npm --workspace=server run seed"
+    "seed": "npm --workspace=server run seed",
+    "lint": "oxlint --type-aware .",
+    "format": "prettier -w ."
   },
   "devDependencies": {
     "prettier": "3.6.2",
     "turbo": "2.5.8",
     "typescript": "5.9.3"
-  }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "npm@10.2.4"
 }

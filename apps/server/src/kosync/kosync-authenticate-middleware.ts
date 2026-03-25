@@ -1,7 +1,6 @@
 import { Context, Next } from 'hono';
-import { UserRepository } from './user-repository';
 import { AppContext } from '../types';
-import { User } from '@koinsight/common/types/user';
+import { UserRepository } from './user-repository';
 
 export const authenticate = async (c: Context<AppContext>, next: Next) => {
   // Use any for context because Hono middleware type is tricky with generics

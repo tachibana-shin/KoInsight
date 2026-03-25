@@ -2,7 +2,6 @@ import { BookWithData } from '@koinsight/common/types';
 import {
   ActionIcon,
   Box,
-  Button,
   Flex,
   Group,
   Image,
@@ -27,7 +26,6 @@ import { BookPageCoverSelector } from './components/book-page-cover-selector';
 
 import style from './book-card.module.css';
 import { BookUploadCover } from './components/book-upload-cover';
-import { mutate } from 'swr';
 
 type BookCardProps = {
   book: BookWithData;

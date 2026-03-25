@@ -6,7 +6,6 @@ import { GroupBy, SortBy, useAnnotationFilters } from './use-annotation-filters'
 export function AnnotationFiltersComponent(): JSX.Element {
   const {
     types,
-    setTypes,
     toggleType,
     searchTerm,
     setSearchTerm,

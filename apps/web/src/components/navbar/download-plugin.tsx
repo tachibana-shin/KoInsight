@@ -1,4 +1,4 @@
-import { Button, Flex, Modal, ModalProps, Stack, Text, Title } from '@mantine/core';
+import { Button, Flex, Modal, ModalProps, Stack, Text } from '@mantine/core';
 import { IconDownload } from '@tabler/icons-react';
 import { JSX } from 'react';
 

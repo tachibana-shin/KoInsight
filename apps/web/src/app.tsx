@@ -4,11 +4,10 @@ import {
   Burger,
   createTheme,
   Drawer,
-  Flex,
   Group,
   MantineProvider,
   Stack,
-  Text,
+  Text
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';

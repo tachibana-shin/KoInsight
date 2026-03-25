@@ -45,7 +45,7 @@ kosync.get('/users/auth', async (c) => {
   let user = null;
   try {
     user = await UserRepository.login(db, username, password);
-  } catch (error) {}
+  } catch {}
 
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);

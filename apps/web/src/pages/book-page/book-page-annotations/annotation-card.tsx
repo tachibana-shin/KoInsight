@@ -1,6 +1,5 @@
 import { Annotation, Book } from '@koinsight/common/types';
-import { NavLink as RouterNavLink } from 'react-router';
-import { Anchor, Badge, Box, Group, NavLink, Paper, Stack, Text } from '@mantine/core';
+import { Anchor, Badge, Box, Group, Paper, Stack, Text } from '@mantine/core';
 import {
   IconArticle,
   IconBookmark,
@@ -11,7 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { JSX } from 'react';
-import { Link } from 'react-router';
+import { NavLink as RouterNavLink } from 'react-router';
 import { RoutePath } from '../../../routes';
 
 type AnnotationCardProps = {
@@ -33,18 +32,18 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
     }
   };
 
-  const getTypeColor = () => {
-    switch (annotation.annotationType) {
-      case 'highlight':
-        return 'yellow';
-      case 'note':
-        return 'blue';
-      case 'bookmark':
-        return 'green';
-      default:
-        return 'gray';
-    }
-  };
+  // const getTypeColor = () => {
+  //   switch (annotation.annotationType) {
+  //     case 'highlight':
+  //       return 'yellow';
+  //     case 'note':
+  //       return 'blue';
+  //     case 'bookmark':
+  //       return 'green';
+  //     default:
+  //       return 'gray';
+  //   }
+  // };
 
   const isDeleted = Boolean(annotation.deletedAt);
 

@@ -6,7 +6,7 @@ import { AppContext } from '../types';
 
 const books = new Hono<AppContext>();
 
-// Note: coversRouter needs to be refactored too. 
+// Note: coversRouter needs to be refactored too.
 // For now, we'll assume it's refactored or we'll refactor it next.
 // import { coversRouter } from './covers/covers-router';
 // books.route('/:bookId/cover', coversRouter);

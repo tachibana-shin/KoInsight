@@ -46,6 +46,7 @@ export function BookDelete({ book }: BookDeleteProps) {
         position: 'top-center',
       });
     } catch (error) {
+      console.warn(error)
       notifications.show({
         title: 'Failed to delete the book',
         message: 'Failed to delete the book.',

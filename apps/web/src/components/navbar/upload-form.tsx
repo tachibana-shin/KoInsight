@@ -1,10 +1,10 @@
-import { Button, FileInput, Flex, Modal, Text, Title } from '@mantine/core';
+import { Button, FileInput, Flex, Modal, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconUpload } from '@tabler/icons-react';
 import { FormEvent, JSX, useState } from 'react';
-import { uploadDbFile } from '../../api/upload-db-file';
 import { mutate } from 'swr';
+import { uploadDbFile } from '../../api/upload-db-file';
 
 export function UploadForm(): JSX.Element {
   const [file, setFile] = useState<File | null>(null);
@@ -36,8 +36,7 @@ export function UploadForm(): JSX.Element {
         });
         setMessage('');
         close();
-      }
-      else if (response.status === 413) {
+      } else if (response.status === 413) {
         const body = await response.json();
         setMessage(body?.error);
       } else {

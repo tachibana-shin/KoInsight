@@ -3,7 +3,7 @@ services:
     build: .
     container_name: koinsight
     ports:
-      - "3005:3000"
+      - '3005:3000'
     volumes:
       - ./.docker-data:/app/data
       - ./.env:/app/.env

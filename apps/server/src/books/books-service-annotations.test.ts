@@ -22,14 +22,14 @@ describe('BooksService with annotations', () => {
         chapter: 'Chapter 5',
         pageno: 42,
       });
-      
+
       await createAnnotation(db, book, device, 'note', {
         text: 'Another highlight',
         note: 'My thoughts on this passage',
         chapter: 'Chapter 10',
         pageno: 100,
       });
-      
+
       await createAnnotation(db, book, device, 'bookmark', {
         note: 'Resume reading here',
         chapter: 'Chapter 12',
@@ -48,16 +48,16 @@ describe('BooksService with annotations', () => {
       expect(result.bookmarks_count).toBe(1);
 
       // Check annotation details
-      const highlight = result.annotations.find(a => a.annotation_type === 'highlight');
+      const highlight = result.annotations.find((a) => a.annotation_type === 'highlight');
       expect(highlight).toBeDefined();
       expect(highlight?.text).toBe('Important quote from the book');
       expect(highlight?.chapter).toBe('Chapter 5');
 
-      const note = result.annotations.find(a => a.annotation_type === 'note');
+      const note = result.annotations.find((a) => a.annotation_type === 'note');
       expect(note).toBeDefined();
       expect(note?.note).toBe('My thoughts on this passage');
 
-      const bookmark = result.annotations.find(a => a.annotation_type === 'bookmark');
+      const bookmark = result.annotations.find((a) => a.annotation_type === 'bookmark');
       expect(bookmark).toBeDefined();
       expect(bookmark?.pageno).toBe(150);
     });
