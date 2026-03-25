@@ -20,27 +20,14 @@ This guide covers everything you need to know to develop KoInsight locally.
 
 Before you begin, ensure you have the following installed:
 
-1. **Node.js** (v22 or higher)
-   - Download from [nodejs.org](https://nodejs.org/)
-   - Or use a version manager like [nvm](https://github.com/nvm-sh/nvm)
-
-2. **npm** (v10.2.4 or higher)
-   - The project uses npm workspaces for monorepo management
+1. **Bun** (v1.1 or higher) - Recommended for local development
+2. **Node.js** (v22 or higher)
+3. **Wrangler CLI** (for Cloudflare) or **Netlify CLI**
 
 ### Recommended Tools
 
-- **nvm** (Node Version Manager) - Makes it easy to switch between Node versions
-
-  ```bash
-  # Install nvm (macOS/Linux)
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-
-  # Use the required Node version
-  nvm install 22
-  nvm use 22
-  ```
-
-- **Docker** (optional) - For running the production build locally
+- **nvm** (Node Version Manager)
+- **Turbo CLI** (installed automatically via devDependencies)
 
 ## Getting Started
 
@@ -59,280 +46,80 @@ KoInsight uses a monorepo structure with npm workspaces. Install all dependencie
 npm install
 ```
 
-This will install dependencies for:
-
-- Root workspace (build tools, Prettier, Turbo)
-- `apps/server` (Express backend)
-- `apps/web` (React frontend)
-- `packages/common` (shared types)
-
 ### 3. Set Up the Database
 
-The development database uses SQLite and is stored in the `data/` directory.
+The project uses **Drizzle ORM** for database management.
 
 Run database migrations:
 
 ```bash
-npm run -w server knex migrate:latest
+cd apps/server
+npx drizzle-kit migrate
 ```
 
-### 4. Seed the Database (Optional but Recommended)
-
-Populate your database with realistic fake data for development:
+### 4. Seed the Database (Optional)
 
 ```bash
 # From the root directory
 npm run seed
 ```
 
-This creates:
-
-- 5 e-reader devices
-- 10 books (popular fantasy/sci-fi titles)
-- Realistic reading statistics and page data
-- 200+ annotations (highlights, notes, bookmarks)
-- 14 genres with book associations
-- 3 test users with KoSync progress data
-
-**Test User Credentials:**
-
-- Username: `reader1`, `reader2`, `bookworm`
-- Password: `password123` (all users)
-
-See [Database Seeding](#database-seeding) for more details.
-
 ## Development Workflow
 
 ### Running the Development Server
 
-KoInsight consists of two apps that run concurrently:
-
-#### Option 1: Run Both Apps Together (Recommended)
-
-From the **root directory**:
+KoInsight uses **Turborepo** to manage concurrent development servers:
 
 ```bash
 npm run dev
 ```
 
-This uses Turbo to run both apps in parallel:
+This starts:
+- **Hono Backend**: http://localhost:3000 (running with Bun)
+- **Vite Frontend**: http://localhost:5173 (proxied to port 3000)
 
-- **Backend server**: http://localhost:3000 (Express API)
-- **Frontend web app**: http://localhost:5173 (Vite dev server)
-
-#### Option 2: Run Apps Individually
-
-**Backend only:**
-
-```bash
-cd apps/server
-npm run dev
-```
-
-- Runs on http://localhost:3001
-- Watches for TypeScript changes and auto-restarts
-
-**Frontend only:**
-
-```bash
-cd apps/web
-npm run dev
-```
-
-- Runs on http://localhost:3000
-- Hot module replacement enabled
-
-### Development Tips
-
-1. **Frontend proxy**: The Vite dev server (port 3000) proxies API requests to the backend (port 3001)
-2. **Hot reload**: Both apps support hot reloading during development
-3. **TypeScript**: Changes to TypeScript files trigger automatic recompilation
-4. **Shared types**: The `@koinsight/common` package contains types shared between frontend and backend
-
-## Key Technologies
+### Key Technologies
 
 **Backend:**
-
-- Hono - Web framework
-- Drizzle ORM - TypeScript ORM
-- sql.js - SQLite WASM for parsing uploads
-- postgres.js - Postgres driver
-- bcryptjs - Password hashing
-- Zod - Schema validation
+- **Hono**: Ultrafast web framework for Edge/Cloudflare
+- **Drizzle ORM**: TypeScript-first ORM
+- **Postgres / SQLite**: Supported database engines
+- **jszip**: Browser-compatible zipping library
 
 **Frontend:**
+- **React 18**: UI library
+- **Vite**: Modern build tool
+- **Mantine UI**: Design system
+- **Recharts**: Data visualization
 
-- React 18.x - UI library
-- Vite - Build tool and dev server
-- Mantine UI - Component library
-- React Router 7.x - Client-side routing
-- SWR - Data fetching and caching
-- Recharts - Data visualization
-
-**Development:**
-
-- TypeScript - Type safety
-- Turbo - Monorepo build system
-- Prettier - Code formatting
-- Vitest - Unit testing
+**Monorepo:**
+- **Turborepo**: High-performance build system
+- **npm Workspaces**: Dependency management
 
 ## Project Structure
 
 ```
 koinsight/
 ├── apps/
-│   ├── server/              # Hono backend (TypeScript)
+│   ├── server/              # Hono serverless backend
 │   │   ├── src/
-│   │   │   ├── annotations/ # Annotation management
-│   │   │   ├── books/       # Book management
-│   │   │   ├── db/          # Database schema and migrations
-│   │   │   ├── devices/     # Device management
-│   │   │   ├── genres/      # Genre management
-│   │   │   ├── kosync/      # KoSync protocol implementation
-│   │   │   ├── stats/       # Statistics and analytics
-│   │   │   └── app.ts       # App entry point
-│   │   └── package.json
-│   └── web/                 # React frontend (Vite + TypeScript)
-│       ├── src/
-│       │   ├── components/  # React components
-│       │   ├── pages/       # Page components
-│       │   ├── api/         # API client functions
-│       │   └── main.tsx     # App entry point
-│       └── package.json
+│   │   │   ├── db/          # Drizzle schema & migrations
+│   │   │   ├── kosync/      # KoSync protocol
+│   │   │   └── app.ts       # Main API entry
+│   └── web/                 # React Vite frontend
 ├── packages/
-│   └── common/              # Shared types and utilities
-│       └── types/           # TypeScript type definitions
-├── drizzle/                 # Drizzle migrations
-├── package.json             # Root workspace config
-├── turbo.json               # Turbo build configuration
-└── .prettierrc              # Prettier configuration
+│   └── common/              # Shared types
+├── wrangler.toml            # Cloudflare config
+└── netlify.toml             # Netlify config
 ```
-
-## Database Management
-
-### Database Overview
-
-- **Engine**: PostgreSQL (via postgres.js)
-- **ORM**: Drizzle ORM
-- **Parser**: sql.js (for processing KOReader SQLite exports)
-- **Migrations**: Located in `apps/server/drizzle/`
-- **Seeds**: Located in `apps/server/src/db/seeds/`
-
-### Running Migrations
-
-```bash
-# Run all pending migrations
-npm run -w server knex migrate:latest
-
-# Rollback last migration
-npm run -w serverknex migrate:rollback
-
-# Create a new migration
-npm run -w server knex migrate:make migration_name
-```
-
-### Database Seeding
-
-Seed the database with realistic fake data:
-
-```bash
-# From root directory
-npm run seed
-```
-
-**What gets seeded:**
-
-| Data Type                | Count  | Description                                  |
-| ------------------------ | ------ | -------------------------------------------- |
-| Devices                  | 5      | Kindle, Kobo, Nook, iPad, Android Tablet     |
-| Books                    | 10     | Popular fantasy/sci-fi titles                |
-| Book-Device Associations | 50     | Each book on each device                     |
-| Page Statistics          | ~1,800 | Reading progress over last 100 days          |
-| Annotations              | ~200   | Highlights, notes, and bookmarks             |
-| Genres                   | 14     | Fantasy, Sci-Fi, etc. with book associations |
-| Users                    | 3      | Test accounts (password: `password123`)      |
-| Progress Records         | ~13    | KoSync reading progress                      |
-
-### Advanced Knex Commands
-
-```bash
-# Run a specific seed file
-npm run -w server knex seed:run -- --specific=01_devices.ts
-
-# Create a new seed file
-npm run -w server knex seed:make new_seed_name
-
-# View migration status
-npm run -w server knex migrate:status
-```
-
-### Resetting the Database
-
-If you need a fresh start:
-
-```bash
-# Delete the database
-rm data/dev.db
-
-# Run migrations
-npm run -w server knex migrate:latest
-
-# Seed with fake data
-npm run seed
-```
-
-## Code Quality
-
-### Code Formatting
-
-KoInsight uses [Prettier](https://prettier.io/) for consistent code formatting.
-
-**Prettier Configuration** (`.prettierrc`):
-
-**Format your code:**
-
-```bash
-# Format all files (from root)
-npx prettier --write .
-
-# Format specific files
-npx prettier --write "apps/server/**/*.ts"
-npx prettier --write "apps/web/**/*.{ts,tsx}"
-
-# Check formatting without changing files
-npx prettier --check .
-```
-
-**Editor Integration:**
-
-- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-- Enable "Format on Save" for automatic formatting
 
 ## Testing
 
-### Running Tests
-
 ```bash
-# Run all tests
+# Run all tests via Turbo
 npm run test:coverage
 
 # Run server tests only
 cd apps/server
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run with coverage report
-npm run test:coverage
+npm run test
 ```
-
-## Contributing
-
-When contributing code:
-
-1. **Format your code** with Prettier before committing
-2. **Run tests** to ensure nothing breaks
-3. **Write tests** for new features
-4. **Update documentation** if needed
-5. **Follow existing patterns** in the codebase

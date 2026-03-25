@@ -55,38 +55,69 @@
 
 See all [screenshots](/images/screenshots/)
 
-# Installation
+# Serverless Migration
 
-Using [Docker](https://docker.com) and [Docker Compose](https://docs.docker.com/compose/)
+KoInsight has been migrated to a modern, serverless-friendly architecture. This enables you to deploy the application on platforms like **Cloudflare Pages/Workers** and **Netlify** with minimal overhead.
 
-Add the following to your `compose.yaml` file:
+## Comparison with Original Project
 
-```yaml
-name: koinsight
-services:
-  koinsight:
-    image: ghcr.io/georgesg/koinsight:latest
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./data:/app/data
+| Feature | Original Project | Serverless Version (Current) |
+|---------|------------------|-----------------------------|
+| **Core Architecture** | Standalone Node.js/Express server | Monorepo (Turborepo) with Hono API |
+| **Runtime** | Node.js | Bun / Node.js / Cloudflare Workers |
+| **Deployment** | Docker / VPS | Cloudflare Pages, Netlify, or Docker |
+| **Database** | File-based SQLite (`knex`) | Drizzle ORM (Postgres / Cloudflare D1 / SQLite) |
+| **Web App** | Integrated with server | Vite SPA (apps/web) |
+| **Zipping** | `archiver` (Node-specific) | `jszip` (Browser/Serverless compatible) |
+
+# Configuration (Env Variables)
+
+The following environment variables are required for a successful deployment:
+
+### General
+- `NODE_ENV`: Set to `production` or `development`.
+- `MAX_FILE_SIZE_MB`: Max upload size for `.sqlite` files (default: `100`).
+
+### Database
+- `DATABASE_URL`: **Required.** Connection string for your database (e.g., PostgreSQL).
+- `DATA_PATH`: Local path for SQLite data (if not using a remote DB).
+
+### Third-party Integrations
+- `IMGBB_API_KEY`: API key for ImgBB cover storage (Get it from [api.imgbb.com](https://api.imgbb.com/)).
+- `IMGUR_CLIENT_ID`: Client ID for Imgur cover storage (Register an app at [api.imgur.com](https://api.imgur.com/oauth2/addclient)).
+- `FLICKR_*`: Keys and tokens for Flickr integration (Get them from [flickr.com/services/apps/by/me](https://www.flickr.com/services/apps/by/me)).
+- `WEBDAV_*`: URL and credentials for WebDAV storage (e.g., Nextcloud, Infomaniak).
+
+# Deployment Guide
+
+### 1. Unified Local Development
+
+Run the entire stack (frontend + backend) concurrently:
+```bash
+npm run dev
 ```
+Access the dashboard at `http://localhost:5173`. Frontend API calls are automatically proxied to the backend at `http://localhost:3000`.
 
-Run `docker compose up -d`.
+### 2. Cloudflare Pages (Recommended)
 
-# Configuration
+KoInsight is configured for Cloudflare Pages with Functions.
 
-KoInsight can be configured using the following environment variables:
+1. Install [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/): `npm install -g wrangler`
+2. Build the web app: `npm run build:web`
+3. Deploy to Cloudflare:
+   ```bash
+   npm run deploy:wrangler
+   ```
+   *This uses the root `wrangler.toml` to configure assets and the Hono worker.*
 
-- `HOSTNAME`: The hostname or IP address where the server will listen.<br>
-  _Default:_ `localhost`
-- `PORT`: The port number for the web server.<br>
-  _Default:_ `3000`
-- `MAX_FILE_SIZE_MB`: Maximum allowed size (in megabytes) for uploaded files.<br>
-  _Default:_ `100`
-- `DATA_PATH`: Path to the directory where KoInsight data (such as stats or uploads) will be stored.<br>
-  _Default:_ `../../../data` or `/app/data` in Docker.
+### 3. Netlify
+
+1. Build the project: `npm run build`
+2. Deploy using the [Netlify CLI](https://docs.netlify.com/cli/get-started/):
+   ```bash
+   npm run dev:server:netlify
+   ```
+   *Netlify Dev handles the local emulation of functions and redirects.*
 
 # Usage
 
