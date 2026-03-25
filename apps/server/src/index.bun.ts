@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import path from 'path';
 import app from './app';
@@ -14,4 +13,4 @@ const hostname = appConfig.hostname;
 
 console.info(`KoInsight back-end is running on http://${hostname}:${port}`);
 
-serve({ fetch: app.fetch, port, hostname });
+export default { fetch: app.fetch, port, hostname, reusePort: true }

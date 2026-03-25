@@ -12,6 +12,10 @@
     "OPENAI_API_VERSION"
   ],
   "tasks": {
+    "dev:web": {
+      "persistent": true,
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

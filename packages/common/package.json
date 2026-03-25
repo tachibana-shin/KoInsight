@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "echo 0"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.1"

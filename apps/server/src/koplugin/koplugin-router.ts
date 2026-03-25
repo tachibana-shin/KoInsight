@@ -2,13 +2,31 @@ import { KoReaderAnnotation } from '@koinsight/common/types/annotation';
 import { KoReaderBook } from '@koinsight/common/types/book';
 import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
-import archiver from 'archiver';
+import JSZip from 'jszip';
+import fs from 'node:fs/promises';
 import { Hono, Context, Next } from 'hono';
 import path from 'node:path';
-import { streamText } from 'hono/streaming';
+import { stream } from 'hono/streaming';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
 import { AppContext, Variables as AppVariables } from '../types';
+
+async function addDirectoryToZip(zip: JSZip, directoryPath: string, rootPath: string) {
+  const files = await fs.readdir(directoryPath, { withFileTypes: true });
+
+  for (const file of files) {
+    const fullPath = path.join(directoryPath, file.name);
+    const relativePath = path.relative(rootPath, fullPath);
+
+    if (file.isDirectory()) {
+      zip.folder(relativePath);
+      await addDirectoryToZip(zip, fullPath, rootPath);
+    } else {
+      const content = await fs.readFile(fullPath);
+      zip.file(relativePath, content);
+    }
+  }
+}
 
 type Variables = AppVariables & {
   body: any;
@@ -77,23 +95,19 @@ koplugin.get('/health', rejectOldPluginVersion, async (c) => {
   return c.json({ message: 'Plugin is healthy' });
 });
 
-koplugin.get('/download', (c) => {
+koplugin.get('/download', async (c) => {
   const folderPath = path.join(import.meta.dirname ?? '', '../../../../', 'plugins');
-  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  const zip = new JSZip();
+  await addDirectoryToZip(zip, folderPath, folderPath);
+
+  const zipContent = await zip.generateAsync({ type: 'uint8array' });
 
   c.header('Content-Type', 'application/zip');
   c.header('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
 
-  return streamText(c, async (stream) => {
-    archive.on('data', (chunk: Buffer) => stream.write(chunk));
-    archive.on('end', () => stream.close());
-    archive.on('error', (err: Error) => {
-      console.error('Archive error:', err);
-      void stream.close();
-    });
-
-    archive.directory(folderPath, false);
-    await archive.finalize();
+  return stream(c, async (stream) => {
+    await stream.write(zipContent);
   });
 });
 

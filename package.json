@@ -8,19 +8,25 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
+    "clean": "rm -rf apps/web/dist && mkdir apps/web/dist",
+    "build:web": "cd apps/web && bun run build",
     "test:coverage": "turbo run test:coverage",
-    "dev": "turbo run dev --parallel",
-    "dev:server:wrangler": "npm --workspace=server run dev:wrangler",
-    "dev:server:netlify": "npm --workspace=server run dev:netlify",
-    "seed": "npm --workspace=server run seed",
+    "dev:web": "cd apps/web && bun dev",
+    "dev:server:wrangler": "wrangler pages dev --proxy 3000",
+    "dev:server:netlify": "netlify dev",
+    "dev:wrangler": "bun clean && concurrently 'bun dev:web' 'bun dev:server:wrangler'",
+    "dev:netlify": "bun clean && concurrently 'bun dev:web' 'bun dev:server:netlify'",
+    "dev:bun": "bun run --watch apps/server/src/index.bun.ts",
     "lint": "oxlint --type-aware .",
-    "format": "prettier -w ."
+    "format": "prettier -w .",
+    "deploy:wrangler": "bun build:web && wrangler deploy"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "3.6.2",
     "turbo": "2.5.8",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wrangler": "^4.77.0"
   },
   "engines": {
     "node": ">=22"
