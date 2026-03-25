@@ -4,7 +4,16 @@ import {
   KoReaderPageStat,
   PageStat,
 } from '@koinsight/common/types';
-import initSqlJs, { Database } from 'sql.js';
+Object.defineProperty(globalThis, 'window', {
+  get: () => void 0
+})
+Object.defineProperty(globalThis, 'WorkerGlobalScope', {
+  get: () => void 0
+})
+Object.defineProperty(globalThis, '__dirname', {
+  get: () => '/'
+})
+import initSqlJs, { Database } from 'sql.js/dist/sql-asm.js';
 import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
 import { DB } from '../db';
 import * as schema from '../db/schema';

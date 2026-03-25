@@ -5,24 +5,24 @@ import { Genre } from './genre';
 import { PageStat } from './page-stat';
 
 type Stats = {
-  last_open: number;
-  total_read_time: number;
-  total_pages: number;
-  total_read_pages: number;
-  unique_read_pages: number;
+  lastOpen: number;
+  totalReadTime: number;
+  totalPages: number;
+  totalReadPages: number;
+  uniqueReadPages: number;
   notes: number;
   highlights: number;
-  read_per_day: Record<string, number>;
-  started_reading: number;
-  highlights_count: number;
-  notes_count: number;
-  bookmarks_count: number;
-  deleted_count: number;
+  readPerDay: Record<string, number>;
+  startedReading: number;
+  highlightsCount: number;
+  notesCount: number;
+  bookmarksCount: number;
+  deletedCount: number;
 };
 
 type RelatedEntities = {
   stats: PageStat[];
-  device_data: BookDevice[];
+  deviceData: BookDevice[];
   genres: Genre[];
   annotations: Annotation[];
 };

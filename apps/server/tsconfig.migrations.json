@@ -11,5 +11,7 @@
     "incremental": true,
     "isolatedModules": true,
   },
-  "include": ["src/db/migrations/**/*.ts"]
+  "include": [
+    "src/db/migrations/**/*.ts"
+  ]
 }
