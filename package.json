@@ -19,7 +19,8 @@
     "dev:bun": "bun run --watch apps/server/src/index.bun.ts",
     "lint": "oxlint --type-aware .",
     "format": "prettier -w .",
-    "deploy:wrangler": "bun build:web && wrangler deploy"
+    "push:env": "wrangler secret bulk .env",
+    "deploy:wrangler": "bun build:web && bun push:env && wrangler deploy"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
