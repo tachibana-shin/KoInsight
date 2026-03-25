@@ -16,7 +16,7 @@ type DayData = {
 
 export function BookPageCalendar({ book }: BookPageCalendarProps): JSX.Element {
   const calendarEvents = book.stats.reduce<Record<string, CalendarEvent<DayData>>>((acc, event) => {
-    const date = startOfDay(event.start_time);
+    const date = startOfDay(event.startTime);
     const key = date.toISOString();
     acc[key] = acc[key] || { date, data: { events: [] } };
     acc[key].data = acc[key]?.data?.events

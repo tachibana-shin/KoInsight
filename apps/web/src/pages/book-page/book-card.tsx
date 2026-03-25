@@ -60,7 +60,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
           key={`cover-${book.id}-${coverVersion}`}
           src={`${API_URL}/books/${book.id}/cover?v=${coverVersion}`}
           h={media ? 150 : 250}
-          alt={book.title}
+          alt={book.title ?? undefined}
           radius="md"
           fallbackSrc="/book-placeholder-small.png"
         />
@@ -119,7 +119,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
           <Tooltip label="Last opened" position="top" withArrow>
             <IconCalendar stroke={1.5} size={16} />
           </Tooltip>
-          <span className={style.InfoText}>{formatRelativeDate(book.last_open * 1000)}</span>
+          <span className={style.InfoText}>{formatRelativeDate(book.lastOpen * 1000)}</span>
         </Flex>
 
         <Group>
@@ -128,7 +128,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
               <IconHighlight stroke={1.5} size={16} />
             </Tooltip>
             <span className={style.InfoText}>
-              {book.device_data.reduce((acc, device) => acc + device.highlights, 0)}
+              {book.deviceData.reduce((acc, device) => acc + (device.highlights ?? 0), 0)}
             </span>
           </Flex>
 
@@ -137,7 +137,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
               <IconNote stroke={1.5} size={16} />
             </Tooltip>
             <span className={style.InfoText}>
-              {book.device_data.reduce((acc, device) => acc + device.notes, 0)}
+              {book.deviceData.reduce((acc, device) => acc + (device.notes ?? 0), 0)}
             </span>
           </Flex>
         </Group>

@@ -29,7 +29,7 @@ export function CalendarPage(): JSX.Element {
     }
 
     const eventsList = events.reduce<Record<string, CalendarEvent<DayData>>>((acc, event) => {
-      const date = startOfDay(event.start_time);
+      const date = startOfDay(event.startTime);
       const key = date.toISOString();
 
       acc[key] = {
@@ -52,7 +52,7 @@ export function CalendarPage(): JSX.Element {
 
   const getBookNames = useCallback(
     (data: DayData) => {
-      const uniqueBookMd5s = uniq(data.events.map(({ book_md5 }) => book_md5));
+      const uniqueBookMd5s = uniq(data.events.map(({ bookMd5 }) => bookMd5));
       const eventBooks = uniqueBookMd5s.map((id) => getBookByMd5(id)).filter(Boolean) as Book[];
 
       return eventBooks.map((book) => (
@@ -66,7 +66,8 @@ export function CalendarPage(): JSX.Element {
             getDuration(
               sum(
                 data.events
-                  .filter((event) => event.book_md5 === book.md5)
+                   // book.md5 is not Book['md5'] but it's compatible
+                  .filter((event) => event.bookMd5 === book.md5)
                   .map((event) => event.duration)
               )
             )

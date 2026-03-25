@@ -38,7 +38,7 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
           role="button"
           onClick={() => navigate(getBookPath(book.id))}
         >
-          {book.soft_deleted ? (
+          {book.softDeletedAt ? (
             <Tooltip label="This book is hidden" withArrow>
               <IconEyeClosed size={16} className={style.BookHiddenIndicator} />
             </Tooltip>
@@ -47,14 +47,14 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
             src={`${API_URL}/books/${book.id}/cover`}
             style={{ aspectRatio: '1/1.5' }}
             w={cardWidth}
-            alt={book.title}
+            alt={book.title ?? undefined}
             fallbackSrc="/book-placeholder-small.png"
-            className={book.soft_deleted ? style.BookHidden : undefined}
+            className={book.softDeletedAt ? style.BookHidden : undefined}
           />
           <Progress
             radius={0}
             h={5}
-            value={(book.unique_read_pages / book.total_pages) * 100}
+            value={(book.uniqueReadPages / book.totalPages) * 100}
             color="koinsight"
           />
           <Box px="lg" className={C(style.CardDetails, { [style.Small]: isSmallScreen })}>
@@ -92,9 +92,9 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
                     <IconProgress stroke={1.5} size={16} />
                   </Tooltip>
                   <span className={style.Attribute}>
-                    {book.unique_read_pages}
+                    {book.uniqueReadPages}
                     &nbsp;/&nbsp;
-                    {book.total_pages} pages read
+                    {book.totalPages} pages read
                   </span>
                 </Group>
               </>

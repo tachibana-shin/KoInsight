@@ -39,7 +39,7 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
                   component={NavLink}
                   className={style.BookCoverLink}
                 >
-                  {book.soft_deleted ? (
+                  {book.softDeletedAt ? (
                     <Tooltip label="This book is hidden" withArrow>
                       <IconEyeClosed size={13} className={style.BookHiddenIndicator} />
                     </Tooltip>
@@ -49,10 +49,10 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
                     style={{ aspectRatio: '1/1.5' }}
                     w={media ? 40 : 60}
                     fit="contain"
-                    alt={book.title}
+                    alt={book.title ?? undefined}
                     fallbackSrc="/book-placeholder-small.png"
                     radius="sm"
-                    className={book.soft_deleted ? style.BookHidden : undefined}
+                    className={book.softDeletedAt ? style.BookHidden : undefined}
                   />
                 </Anchor>
                 <Stack gap={2} justify="center">
@@ -75,18 +75,18 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
               </Flex>
             </Table.Td>
             <Table.Td visibleFrom="md">
-              {book.unique_read_pages}
+              {book.uniqueReadPages}
               <Progress
-                value={(book.unique_read_pages / book.total_pages) * 100}
+                value={(book.uniqueReadPages / book.totalPages) * 100}
                 aria-label="Percentage read"
-                aria-valuetext={String((book.unique_read_pages / book.total_pages) * 100)}
+                aria-valuetext={String((book.uniqueReadPages / book.totalPages) * 100)}
               />
             </Table.Td>
-            <Table.Td visibleFrom="md">{book.total_pages}</Table.Td>
+            <Table.Td visibleFrom="md">{book.totalPages}</Table.Td>
             <Table.Td visibleFrom="md">
-              {book.total_read_time ? shortDuration(getDuration(book.total_read_time)) : 'N/A'}
+              {book.totalReadTime ? shortDuration(getDuration(book.totalReadTime)) : 'N/A'}
             </Table.Td>
-            <Table.Td visibleFrom="md">{formatRelativeDate(book.last_open * 1000)}</Table.Td>
+            <Table.Td visibleFrom="md">{formatRelativeDate(book.lastOpen * 1000)}</Table.Td>
           </Table.Tr>
         ))}
       </Table.Tbody>

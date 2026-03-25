@@ -49,7 +49,7 @@ export function WeekStats({
 
   const weekData = useMemo(() => {
     const start = startOfWeek(weekStart, { weekStartsOn: 1 }).getTime();
-    return stats?.filter(({ start_time }) => start_time < weekEnd && start_time > start);
+    return stats?.filter(({ startTime }) => startTime < weekEnd && startTime > start);
   }, [stats, weekStart, weekEnd]);
 
   const weekDaysPassed = useMemo(
@@ -61,8 +61,8 @@ export function WeekStats({
     () =>
       Math.round(
         weekData?.reduce((acc, stat) => {
-          if (stat.total_pages && booksByMd5[stat.book_md5]?.reference_pages) {
-            return acc + (1 / stat.total_pages) * booksByMd5[stat.book_md5].reference_pages!;
+          if (stat.totalPages && booksByMd5[stat.bookMd5]?.referencePages) {
+            return acc + (1 / stat.totalPages) * booksByMd5[stat.bookMd5].referencePages!;
           } else {
             return acc + 1;
           }
@@ -73,14 +73,14 @@ export function WeekStats({
 
   const avgPagesPerDay = useMemo(() => {
     const statsPerDay = groupBy((stat: PageStat) =>
-      startOfDay(stat.start_time).getTime().toString()
+      startOfDay(stat.startTime).getTime().toString()
     )(weekData ?? []);
 
     const pagesPerDay = Object.values(statsPerDay).map(
       (dayStats) =>
         dayStats?.reduce((acc, stat) => {
-          if (stat.total_pages && booksByMd5[stat.book_md5]?.reference_pages) {
-            return acc + (1 / stat.total_pages) * booksByMd5[stat.book_md5].reference_pages!;
+          if (stat.totalPages && booksByMd5[stat.bookMd5]?.referencePages) {
+            return acc + (1 / stat.totalPages) * booksByMd5[stat.bookMd5].referencePages!;
           } else {
             return acc + 1;
           }
@@ -95,7 +95,7 @@ export function WeekStats({
 
     let day = weekStart;
     while (isBefore(day, weekEnd)) {
-      const dayStats = stats?.filter((stat) => isSameDay(stat.start_time, day)) ?? [];
+      const dayStats = stats?.filter((stat) => isSameDay(stat.startTime, day)) ?? [];
 
       perDayResult.push({
         day: format(day, 'dd MMM yyyy'),

@@ -12,7 +12,7 @@ export function ReadingCalendar(): JSX.Element {
 
   const percentPerDay: Record<number, DayData> = useMemo(() => {
     const timePerDay = stats.reduce<Record<number, number>>((acc, stat) => {
-      const day = startOfDay(stat.start_time).getTime();
+      const day = startOfDay(stat.startTime).getTime();
       acc[day] = (acc[day] || 0) + stat.duration;
       return acc;
     }, {});

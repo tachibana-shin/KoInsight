@@ -21,28 +21,32 @@ type AnnotationCardProps = {
 
 export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.Element {
   const getTypeIcon = () => {
-    switch (annotation.annotation_type) {
+    switch (annotation.annotationType) {
       case 'highlight':
-        return <IconHighlight size={16} />;
+        return <IconHighlight size={14} />;
       case 'note':
-        return <IconNote size={16} />;
+        return <IconNote size={14} />;
       case 'bookmark':
-        return <IconBookmark size={16} />;
+        return <IconBookmark size={14} />;
+      default:
+        return null;
     }
   };
 
   const getTypeColor = () => {
-    switch (annotation.annotation_type) {
+    switch (annotation.annotationType) {
       case 'highlight':
         return 'yellow';
       case 'note':
         return 'blue';
       case 'bookmark':
         return 'green';
+      default:
+        return 'gray';
     }
   };
 
-  const isDeleted = annotation.deleted_at || annotation.deleted;
+  const isDeleted = Boolean(annotation.deletedAt);
 
   return (
     <Paper
@@ -56,9 +60,21 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
       <Stack gap="xs">
         <Group justify="space-between">
           <Group gap="xs">
-            <Badge leftSection={getTypeIcon()} color={getTypeColor()} variant="light" size="sm">
-              {annotation.annotation_type}
-            </Badge>
+            {annotation.annotationType === 'note' && (
+              <Badge leftSection={getTypeIcon()} color="blue" variant="light" size="sm">
+                Note
+              </Badge>
+            )}
+            {annotation.annotationType === 'bookmark' && (
+              <Badge leftSection={getTypeIcon()} color="green" variant="light" size="sm">
+                Bookmark
+              </Badge>
+            )}
+            {annotation.annotationType === 'highlight' && (
+              <Badge leftSection={getTypeIcon()} color="yellow" variant="light" size="sm">
+                Highlight
+              </Badge>
+            )}
             {annotation.color && (
               <Badge variant="outline" size="sm" color="gray">
                 {annotation.color}
@@ -114,9 +130,9 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
               <IconArticle size={16} /> {annotation.chapter}
             </Text>
           )}
-          {annotation.pageno && annotation.total_pages && (
+          {annotation.pageno && annotation.totalPages && (
             <Text size="xs" c="dimmed" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconVocabulary size={16} /> Page {annotation.pageno}/{annotation.total_pages}
+              <IconVocabulary size={16} /> Page {annotation.pageno} of {annotation.totalPages}
             </Text>
           )}
         </Group>

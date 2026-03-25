@@ -1,4 +1,4 @@
-import { Annotation, BookWithData } from '@koinsight/common/types';
+import { Annotation, AnnotationType, BookWithData } from '@koinsight/common/types';
 import { Accordion, Box, Divider, Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import { AnnotationCard } from './annotation-card';
@@ -16,11 +16,11 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
     let filtered = book.annotations;
 
     // Filter by type
-    filtered = filtered.filter((a) => types.includes(a.annotation_type));
+    filtered = filtered.filter((a) => types.includes(a.annotationType as AnnotationType));
 
     // Filter by deleted status
     if (!showDeleted) {
-      filtered = filtered.filter((a) => !a.deleted_at && !a.deleted);
+      filtered = filtered.filter((a) => !a.deletedAt);
     }
 
     // Filter by search text
@@ -64,7 +64,7 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
       let key = '';
 
       if (groupBy === 'type') {
-        key = annotation.annotation_type;
+        key = annotation.annotationType;
       } else if (groupBy === 'chapter') {
         key = annotation.chapter || 'Unknown chapter';
       }
@@ -85,9 +85,9 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
           Annotations ({filteredAndSortedAnnotations.length} of {book.annotations.length})
         </Title>
         <Text size="sm" c="dimmed">
-          {book.highlights_count} highlights · {book.notes_count} notes · {book.bookmarks_count}{' '}
+          {book.highlightsCount} highlights · {book.notesCount} notes · {book.bookmarksCount}{' '}
           bookmarks
-          {book.deleted_count > 0 && ` · ${book.deleted_count} deleted`}
+          {book.deletedCount > 0 && ` · ${book.deletedCount} deleted`}
         </Text>
       </Box>
 
