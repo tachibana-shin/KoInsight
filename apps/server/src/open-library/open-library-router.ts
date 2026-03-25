@@ -3,8 +3,9 @@ import { BooksRepository } from '../books/books-repository';
 import { CoversService } from '../books/covers/covers-service';
 import { ImageUploadService } from '../upload/image-upload-service';
 import { OpenLibraryService } from './open-library-service';
+import { AppContext } from '../types';
 
-const openLibrary = new Hono();
+const openLibrary = new Hono<AppContext>();
 
 openLibrary.get('/list-covers', async (c) => {
   const searchTerm = c.req.query('searchTerm') ?? '';
@@ -27,7 +28,8 @@ openLibrary.get('/cover', async (c) => {
 
   if (!bookId || !coverId) return c.text('Invalid request', 400);
 
-  const book = await BooksRepository.getById(Number(bookId));
+  const db = c.get('db');
+  const book = await BooksRepository.getById(db, Number(bookId));
   if (!book) return c.text('Book not found', 404);
 
   try {
@@ -38,7 +40,7 @@ openLibrary.get('/cover', async (c) => {
 
     if (provider === 'flickr' || provider === 'imgur') {
       const url = await ImageUploadService.uploadBuffer(coverBuffer, `cover-${book.md5}`);
-      await BooksRepository.update(book.id, { coverUrl: url });
+      await BooksRepository.update(db, book.id, { coverUrl: url });
     } else {
       await CoversService.uploadBuffer(book, coverBuffer, '.jpg');
     }

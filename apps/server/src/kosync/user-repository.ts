@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
 import { User } from '@koinsight/common/types/user';
 import { eq } from 'drizzle-orm';
@@ -18,7 +18,7 @@ export class UserExistsError extends Error {
 }
 
 export class UserRepository {
-  static async login(username: string, password: string): Promise<User | null> {
+  static async login(db: DB, username: string, password: string): Promise<User | null> {
     const [user] = await db.select().from(schema.user).where(eq(schema.user.username, username));
     if (!user) {
       return null;
@@ -30,13 +30,10 @@ export class UserRepository {
 
     return {
       ...user,
-      password_hash: user.passwordHash,
-      created_at: user.createdAt,
-      updated_at: user.updatedAt,
     };
   }
 
-  static async createUser(username: string, password: string): Promise<void> {
+  static async createUser(db: DB, username: string, password: string): Promise<void> {
     const [existingUser] = await db.select().from(schema.user).where(eq(schema.user.username, username));
 
     if (existingUser) {

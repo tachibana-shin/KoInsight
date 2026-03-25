@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { DeviceRepository } from '../devices/device-repository';
+import { AppContext } from '../types';
 
-const devices = new Hono();
+const devices = new Hono<AppContext>();
 
 devices.get('/', async (c) => {
-  const allDevices = await DeviceRepository.getAll();
+  const db = c.get('db');
+  const allDevices = await DeviceRepository.getAll(db);
   return c.json(allDevices);
 });
 

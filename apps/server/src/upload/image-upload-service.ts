@@ -4,7 +4,7 @@ import { ImgurService } from './imgur-service';
 import { appConfig } from '../config';
 import { CoversService } from '../books/covers/covers-service';
 import { Book } from '@koinsight/common/types/book';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -42,8 +42,9 @@ export class ImageUploadService {
    * Upload a book cover (File/Blob) and persist the URL to the DB (or save locally).
    */
   static async uploadBookCover(
+    db: DB,
     book: Book,
-    file: { arrayBuffer: () => Promise<ArrayBuffer>; name: string }
+    file: { arrayBuffer: () => Promise<ArrayBuffer>; name: string; type: string }
   ): Promise<void> {
     const imageBuffer = Buffer.from(await file.arrayBuffer());
     const title = `cover-${book.md5}`;

@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { ImageUploadService } from '../../upload/image-upload-service';
 import { getBookById } from '../get-book-by-id-middleware';
 import { CoversService } from './covers-service';
+import { AppContext } from '../../types';
 
-const covers = new Hono();
+const covers = new Hono<AppContext>();
 
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif'];
 
@@ -12,6 +13,7 @@ const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif'];
  */
 covers.get('/', getBookById, async (c) => {
   const book = c.get('book');
+  if (!book) return c.json({ error: 'Book not found' }, 404);
 
   if (book.coverUrl) {
     return c.redirect(book.coverUrl);
@@ -52,8 +54,10 @@ covers.post('/', getBookById, async (c) => {
   }
 
   try {
+    const db = c.get('db');
+    if (!book) return c.json({ error: 'Book not found' }, 404);
     await CoversService.deleteExisting(book);
-    await ImageUploadService.uploadBookCover(book, file);
+    await ImageUploadService.uploadBookCover(db, book, file);
     return c.json({ message: 'Cover updated', provider: ImageUploadService.getProvider() });
   } catch (error) {
     console.error('Error uploading cover:', error);

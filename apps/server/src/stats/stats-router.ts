@@ -2,17 +2,19 @@ import { Hono } from 'hono';
 import { BooksRepository } from '../books/books-repository';
 import { StatsRepository } from './StatsRepository';
 import { StatsService } from './stats-service';
+import { AppContext } from '../types';
 
-const stats = new Hono();
+const stats = new Hono<AppContext>();
 
 /**
  * Get all stats
  */
 stats.get('/', async (c) => {
-  const books = await BooksRepository.getAllWithData();
+  const db = c.get('db');
+  const books = await BooksRepository.getAllWithData(db);
   const totalPagesRead = StatsService.totalPagesRead(books);
 
-  const allStats = await StatsRepository.getAll();
+  const allStats = await StatsRepository.getAll(db);
   const perMonth = StatsService.getPerMonthReadingTime(allStats);
   const perDayOfTheWeek = StatsService.perDayOfTheWeek(allStats);
   const mostPagesInADay = StatsService.mostPagesInADay(books, allStats);
@@ -38,8 +40,9 @@ stats.get('/', async (c) => {
  * Get stats by book md5
  */
 stats.get('/:book_md5', async (c) => {
+  const db = c.get('db');
   const book_md5 = c.req.param('book_md5');
-  const bookStats = await StatsRepository.getByBookMD5(book_md5);
+  const bookStats = await StatsRepository.getByBookMD5(db, book_md5);
   return c.json(bookStats);
 });
 

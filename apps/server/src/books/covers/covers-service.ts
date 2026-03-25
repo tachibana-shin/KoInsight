@@ -1,5 +1,5 @@
 import { Book } from '@koinsight/common/types/book';
-import path from 'path';
+import path from 'node:path';
 import { WebDavService } from '../../upload/webdav-service';
 
 const COVERS_REMOTE_PATH = '/covers';

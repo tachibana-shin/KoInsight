@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { authenticate } from './kosync-authenticate-middleware';
 import { KosyncRepository } from './kosync-repository';
 import { UserExistsError, UserRepository } from './user-repository';
+import { AppContext } from '../types';
 
-const kosync = new Hono();
+const kosync = new Hono<AppContext>();
 
 /**
  *  KoSync API: User Creation
@@ -14,8 +15,9 @@ kosync.post('/users/create', async (c) => {
   if (!username || !password) {
     return c.json({ error: 'Username and password are required' }, 400);
   }
+  const db = c.get('db');
   try {
-    await UserRepository.createUser(username, password);
+    await UserRepository.createUser(db, username, password);
   } catch (error) {
     if (error instanceof UserExistsError) {
       return c.json({ error: 'User already exists' }, 402);
@@ -39,9 +41,10 @@ kosync.get('/users/auth', async (c) => {
     return c.json({ error: 'Invalid request' }, 400);
   }
 
+  const db = c.get('db');
   let user = null;
   try {
-    user = await UserRepository.login(username, password);
+    user = await UserRepository.login(db, username, password);
   } catch (error) {}
 
   if (!user) {
@@ -58,17 +61,20 @@ kosync.put('/syncs/progress', authenticate, async (c) => {
   const { document, progress, percentage, device, device_id } = await c.req.json();
   const user = c.get('user');
 
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
   if (!document || !progress || !percentage || !device || !device_id) {
     return c.json({ error: 'All fields are required' }, 400);
   }
 
+  const db = c.get('db');
   try {
-    const insertedProgress = await KosyncRepository.upsert(user.id, {
+    const insertedProgress = await KosyncRepository.upsert(db, user.id, {
       document,
       progress,
       percentage,
       device,
-      device_id,
+      deviceId: device_id,
     });
     return c.json(insertedProgress);
   } catch (error) {
@@ -84,11 +90,14 @@ kosync.get('/syncs/progress/:document', authenticate, async (c) => {
   const document = c.req.param('document');
   const user = c.get('user');
 
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
   if (!document) {
     return c.json({ error: 'Document is required' }, 400);
   }
 
-  const progress = await KosyncRepository.getByUserIdAndDocument(user.id, document);
+  const db = c.get('db');
+  const progress = await KosyncRepository.getByUserIdAndDocument(db, user.id, document);
   if (!progress) {
     return c.json({ error: 'Progress not found' }, 404);
   }
@@ -100,7 +109,8 @@ kosync.get('/syncs/progress/:document', authenticate, async (c) => {
  * Get all progresses
  */
 kosync.get('/syncs/progress', async (c) => {
-  const progresses = await KosyncRepository.getAll();
+  const db = c.get('db');
+  const progresses = await KosyncRepository.getAll(db);
   return c.json(progresses);
 });
 

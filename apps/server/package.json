@@ -3,11 +3,14 @@
   "version": "v0.2.2",
   "description": "KoInsight back-end server",
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "node dist/index.node.js",
     "build": "tsc -b",
     "build:migrations": "tsc -p tsconfig.migrations.json",
-    "dev": "bun --watch src/app.ts",
+    "dev": "bun --watch src/index.node.ts",
+    "dev:wrangler": "wrangler dev",
+    "dev:netlify": "netlify dev",
     "test": "npm run build:migrations && vitest run",
     "test:watch": "npm run build:migrations && vitest",
     "test:coverage": "npm run build:migrations && vitest run --coverage"

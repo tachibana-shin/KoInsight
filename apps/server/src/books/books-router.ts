@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { BooksRepository } from './books-repository';
 import { BooksService } from './books-service';
 import { getBookById } from './get-book-by-id-middleware';
+import { AppContext } from '../types';
 
-const books = new Hono();
+const books = new Hono<AppContext>();
 
 // Note: coversRouter needs to be refactored too. 
 // For now, we'll assume it's refactored or we'll refactor it next.
@@ -15,7 +16,8 @@ const books = new Hono();
  */
 books.get('/', async (c) => {
   const returnDeleted = c.req.query('showHidden') === 'true';
-  const booksData = await BooksRepository.getAllWithData(returnDeleted);
+  const db = c.get('db');
+  const booksData = await BooksRepository.getAllWithData(db, returnDeleted);
   return c.json(booksData);
 });
 
@@ -23,9 +25,10 @@ books.get('/', async (c) => {
  * Get a book with attached entity data by ID
  */
 books.get('/:bookId', getBookById, async (c) => {
-  const book = c.get('book');
+  const book = c.get('book')!;
   const includeDeleted = c.req.query('includeDeleted') === 'true';
-  const bookWithData = await BooksService.withData(book, includeDeleted);
+  const db = c.get('db');
+  const bookWithData = await BooksService.withData(db, book, includeDeleted);
   return c.json(bookWithData);
 });
 
@@ -33,9 +36,10 @@ books.get('/:bookId', getBookById, async (c) => {
  * Delete a book by ID
  */
 books.delete('/:bookId', getBookById, async (c) => {
-  const book = c.get('book');
+  const book = c.get('book')!;
+  const db = c.get('db');
   try {
-    await BooksRepository.delete(book);
+    await BooksRepository.delete(db, book);
     return c.json({ message: 'Book deleted' });
   } catch (error) {
     console.error(error);
@@ -44,15 +48,16 @@ books.delete('/:bookId', getBookById, async (c) => {
 });
 
 books.put('/:bookId/hide', getBookById, async (c) => {
-  const book = c.get('book');
+  const book = c.get('book')!;
   const { hidden } = await c.req.json();
+  const db = c.get('db');
 
   if (hidden === undefined || hidden === null) {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
   try {
-    await BooksRepository.softDelete(book.id, hidden);
+    await BooksRepository.softDelete(db, book.id, hidden);
     return c.json({ message: `Book ${hidden ? 'hidden' : 'shown'}` });
   } catch (error) {
     console.error(error);
@@ -64,15 +69,16 @@ books.put('/:bookId/hide', getBookById, async (c) => {
  * Adds a new genre to a book
  */
 books.post('/:bookId/genres', getBookById, async (c) => {
-  const book = c.get('book');
+  const book = c.get('book')!;
   const { genreName } = await c.req.json();
+  const db = c.get('db');
 
   if (!genreName) {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
   try {
-    await BooksRepository.addGenre(book.md5, genreName);
+    await BooksRepository.addGenre(db, book.md5, genreName);
     return c.json({ message: 'Genre added' });
   } catch (error) {
     console.error(error);
@@ -84,15 +90,16 @@ books.post('/:bookId/genres', getBookById, async (c) => {
  * Updates a book's reference pages
  */
 books.put('/:bookId/reference_pages', getBookById, async (c) => {
-  const book = c.get('book');
+  const book = c.get('book')!;
   const { reference_pages } = await c.req.json();
+  const db = c.get('db');
 
   if (reference_pages === undefined || reference_pages === null) {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
   try {
-    await BooksRepository.setReferencePages(book.id, reference_pages);
+    await BooksRepository.setReferencePages(db, book.id, reference_pages);
     return c.json({ message: 'Reference pages updated' });
   } catch (error) {
     console.error(error);

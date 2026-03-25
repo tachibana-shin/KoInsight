@@ -4,16 +4,21 @@ import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
 import archiver from 'archiver';
 import { Hono, Context, Next } from 'hono';
-import path from 'path';
+import path from 'node:path';
 import { streamText } from 'hono/streaming';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
+import { AppContext, Variables as AppVariables } from '../types';
 
-const koplugin = new Hono();
+type Variables = AppVariables & {
+  body: any;
+};
+
+const koplugin = new Hono<{ Bindings: AppContext['Bindings']; Variables: Variables }>();
 
 export const REQUIRED_PLUGIN_VERSION = '0.3.0';
 
-const rejectOldPluginVersion = async (c: Context, next: Next) => {
+const rejectOldPluginVersion = async (c: Context<{ Bindings: AppContext['Bindings']; Variables: Variables }>, next: Next) => {
   const body = await c.req.json().catch(() => ({}));
   const { version } = body;
   // Store body for later use since we consumed it
@@ -38,8 +43,9 @@ koplugin.post('/device', rejectOldPluginVersion, async (c) => {
   }
 
   const device: Device = { id, model };
+  const db = c.get('db');
   try {
-    await DeviceRepository.insertIfNotExists(device);
+    await DeviceRepository.insertIfNotExists(db, device);
     return c.json({ message: 'Device registered successfully' });
   } catch (err) {
     console.error(err);
@@ -53,9 +59,10 @@ koplugin.post('/import', rejectOldPluginVersion, async (c) => {
   const newPageStats: PageStat[] = body.stats;
   const annotations: Record<string, KoReaderAnnotation[]> = body.annotations || {};
   const deviceId: string | undefined = body.device_id;
+  const db = c.get('db');
 
   try {
-    await UploadService.uploadStatisticData(koreaderBooks, newPageStats, annotations, deviceId);
+    await UploadService.uploadStatisticData(db, koreaderBooks, newPageStats, annotations, deviceId);
     return c.json({ message: 'Upload successful' });
   } catch (err) {
     console.error(err);
@@ -68,7 +75,7 @@ koplugin.get('/health', rejectOldPluginVersion, async (c) => {
 });
 
 koplugin.get('/download', (c) => {
-  const folderPath = path.join(__dirname, '../../../../', 'plugins');
+  const folderPath = path.join(import.meta.dirname ?? '', '../../../../', 'plugins');
   const archive = archiver('zip', { zlib: { level: 9 } });
 
   c.header('Content-Type', 'application/zip');

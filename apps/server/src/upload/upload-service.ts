@@ -6,7 +6,7 @@ import {
 } from '@koinsight/common/types';
 import initSqlJs, { Database } from 'sql.js';
 import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
@@ -55,6 +55,7 @@ export class UploadService {
   }
 
   static async uploadStatisticData(
+    db: DB,
     booksToImport: KoReaderBook[],
     newPageStats: Omit<PageStat, 'id'>[],
     annotationsByBook?: Record<string, KoReaderAnnotation[]>,
@@ -153,14 +154,15 @@ export class UploadService {
       // Insert annotations
       if (annotationsByBook) {
         for (const [bookMd5, annotations] of Object.entries(annotationsByBook)) {
-          await AnnotationsRepository.bulkInsert(bookMd5, deviceId, annotations, tx);
-          await this.detectAndMarkDeletedAnnotations(bookMd5, deviceId, annotations, tx);
+          await AnnotationsRepository.bulkInsert(db, bookMd5, deviceId, annotations, tx);
+          await this.detectAndMarkDeletedAnnotations(db, bookMd5, deviceId, annotations, tx);
         }
       }
     });
   }
 
   private static async detectAndMarkDeletedAnnotations(
+    db: DB,
     bookMd5: string,
     deviceId: string,
     syncedAnnotations: KoReaderAnnotation[],
@@ -185,7 +187,7 @@ export class UploadService {
     );
 
     if (deletedAnnotations.length > 0) {
-      await AnnotationsRepository.markManyAsDeleted(bookMd5, deviceId, deletedAnnotations, tx);
+      await AnnotationsRepository.markManyAsDeleted(db, bookMd5, deviceId, deletedAnnotations, tx);
       console.log(`Marked ${deletedAnnotations.length} annotations as deleted for book ${bookMd5}`);
     }
   }

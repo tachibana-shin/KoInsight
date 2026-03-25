@@ -1,7 +1,7 @@
 import { Annotation, AnnotationType, KoReaderAnnotation } from '@koinsight/common/types';
 import { SQL, eq, and, desc, sql, isNull, isNotNull, InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { PgQueryResultHKT, PgTransaction, PgUpdateSetSource } from 'drizzle-orm/pg-core';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
 
 
@@ -9,7 +9,7 @@ export class AnnotationsRepository {
     /**
      * Get all annotations for a book, optionally filtered by device
      */
-    static async getByBookMd5(md5: string, deviceId?: string): Promise<Annotation[]> {
+    static async getByBookMd5(db: DB, md5: string, deviceId?: string): Promise<Annotation[]> {
         let whereClause: SQL = eq(schema.annotation.bookMd5, md5);
 
         if (deviceId) {
@@ -23,15 +23,6 @@ export class AnnotationsRepository {
 
         return annotations.map((a) => ({
             ...a,
-            book_md5: a.bookMd5,
-            device_id: a.deviceId,
-            annotation_type: a.annotationType,
-            page_ref: a.pageRef,
-            datetime_updated: a.datetimeUpdated,
-            total_pages: a.totalPages,
-            deleted_at: a.deletedAt,
-            created_at: a.createdAt,
-            updated_at: a.updatedAt,
             pos0: a.pos0 ? JSON.parse(a.pos0) : undefined,
             pos1: a.pos1 ? JSON.parse(a.pos1) : undefined,
             deleted: Boolean(a.deletedAt),
@@ -42,18 +33,19 @@ export class AnnotationsRepository {
      * Get annotations by type for a book
      */
     static async getByType(
+        db: DB,
         md5: string,
         type: AnnotationType,
         deviceId?: string
     ): Promise<Annotation[]> {
-        const annotations = await this.getByBookMd5(md5, deviceId);
+        const annotations = await this.getByBookMd5(db, md5, deviceId);
         return annotations.filter((a) => a.annotationType === type);
     }
 
     /**
      * Get all annotations for a device
      */
-    static async getByDeviceId(deviceId: string): Promise<Annotation[]> {
+    static async getByDeviceId(db: DB, deviceId: string): Promise<Annotation[]> {
         const annotations = await db.select()
             .from(schema.annotation)
             .where(eq(schema.annotation.deviceId, deviceId))
@@ -70,10 +62,11 @@ export class AnnotationsRepository {
      * Bulk insert annotations from KoReader
      */
     static async bulkInsert<T extends PgQueryResultHKT>(
+        db: DB,
         bookMd5: string,
         deviceId: string,
         koreaderAnnotations: KoReaderAnnotation[],
-        tx?: PgTransaction<T>
+        tx?: PgTransaction<T, any, any>
     ): Promise<void> {
         if (koreaderAnnotations.length === 0) {
             return;
@@ -120,6 +113,7 @@ export class AnnotationsRepository {
      * Insert a single annotation
      */
     static async insert(
+        db: DB,
         annotation: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>
     ): Promise<Annotation> {
         const [inserted] = await db.insert(schema.annotation)
@@ -153,26 +147,27 @@ export class AnnotationsRepository {
      * Update an annotation
      */
     static async update(
+        db: DB,
         id: number,
         updates: Partial<Omit<Annotation, 'id' | 'book_md5' | 'device_id' | 'created_at' | 'updated_at'>>
     ): Promise<void> {
         const data = { ...updates, updatedAt: new Date() };
-        if (updates.pos0 && typeof updates.pos0 === 'object') data.pos0 = JSON.stringify(updates.pos0);
-        if (updates.pos1 && typeof updates.pos1 === 'object') data.pos1 = JSON.stringify(updates.pos1);
+        if (updates.pos0 && typeof updates.pos0 === 'object') (data as any).pos0 = JSON.stringify(updates.pos0);
+        if (updates.pos1 && typeof updates.pos1 === 'object') (data as any).pos1 = JSON.stringify(updates.pos1);
 
         // Map snake_case to camelCase for Drizzle
         const mapped: PgUpdateSetSource<typeof schema.annotation> = {};
-        if (data.text !== undefined) mapped.text = data.text ?? null;
-        if (data.note !== undefined) mapped.note = data.note ?? null;
-        if (data.drawer !== undefined) mapped.drawer = data.drawer ?? null;
-        if (data.color !== undefined) mapped.color = data.color ?? null;
-        if (data.chapter !== undefined) mapped.chapter = data.chapter ?? null;
-        if (data.pageno !== undefined) mapped.pageno = data.pageno ?? null;
-        if (data.pageRef !== undefined) mapped.pageRef = data.pageRef;
-        if (data.pos0 !== undefined) mapped.pos0 = typeof data.pos0 === 'object' ? JSON.stringify(data.pos0) : data.pos0 ?? null;
-        if (data.pos1 !== undefined) mapped.pos1 = typeof data.pos1 === 'object' ? JSON.stringify(data.pos1) : data.pos1 ?? null;
-        if (data.datetimeUpdated !== undefined) mapped.datetimeUpdated = data.datetimeUpdated ?? null;
-        if (data.updatedAt !== undefined) mapped.updatedAt = data.updatedAt;
+        if (data.text !== undefined) mapped.text = (data as any).text ?? null;
+        if (data.note !== undefined) mapped.note = (data as any).note ?? null;
+        if (data.drawer !== undefined) mapped.drawer = (data as any).drawer ?? null;
+        if (data.color !== undefined) mapped.color = (data as any).color ?? null;
+        if (data.chapter !== undefined) mapped.chapter = (data as any).chapter ?? null;
+        if (data.pageno !== undefined) mapped.pageno = (data as any).pageno ?? null;
+        if (data.pageRef !== undefined) mapped.pageRef = (data as any).pageRef;
+        if (data.pos0 !== undefined) mapped.pos0 = typeof (data as any).pos0 === 'object' ? JSON.stringify((data as any).pos0) : (data as any).pos0 ?? null;
+        if (data.pos1 !== undefined) mapped.pos1 = typeof (data as any).pos1 === 'object' ? JSON.stringify((data as any).pos1) : (data as any).pos1 ?? null;
+        if (data.datetimeUpdated !== undefined) mapped.datetimeUpdated = (data as any).datetimeUpdated ?? null;
+        if (data.updatedAt !== undefined) mapped.updatedAt = (data as any).updatedAt;
 
         await db.update(schema.annotation)
             .set(mapped)
@@ -182,21 +177,21 @@ export class AnnotationsRepository {
     /**
      * Delete an annotation
      */
-    static async delete(id: number): Promise<void> {
+    static async delete(db: DB, id: number): Promise<void> {
         await db.delete(schema.annotation).where(eq(schema.annotation.id, id));
     }
 
     /**
      * Delete all annotations for a book
      */
-    static async deleteByBookMd5(md5: string): Promise<void> {
+    static async deleteByBookMd5(db: DB, md5: string): Promise<void> {
         await db.delete(schema.annotation).where(eq(schema.annotation.bookMd5, md5));
     }
 
     /**
      * Get counts by type for a book
      */
-    static async getCountsByType(md5: string): Promise<Record<AnnotationType, number>> {
+    static async getCountsByType(db: DB, md5: string): Promise<Record<AnnotationType, number>> {
         const counts = await db.select({
             type: schema.annotation.annotationType,
             count: sql<number> `count(*)`,
@@ -221,7 +216,7 @@ export class AnnotationsRepository {
     /**
      * Get total count of deleted annotations for a book
      */
-    static async getDeletedCount(md5: string): Promise<number> {
+    static async getDeletedCount(db: DB, md5: string): Promise<number> {
         const [result] = await db.select({
             count: sql<number> `count(*)`,
         })
@@ -234,7 +229,7 @@ export class AnnotationsRepository {
     /**
      * Soft-delete an annotation by ID
      */
-    static async markAsDeleted(id: number): Promise<void> {
+    static async markAsDeleted(db: DB, id: number): Promise<void> {
         await db.update(schema.annotation)
             .set({ deletedAt: new Date() })
             .where(eq(schema.annotation.id, id));
@@ -244,10 +239,11 @@ export class AnnotationsRepository {
      * Soft-delete multiple annotations by their identifiers
      */
     static async markManyAsDeleted<T extends PgQueryResultHKT>(
+        db: DB,
         bookMd5: string,
         deviceId: string,
         identifiers: Array<{ page_ref: string; datetime: string; }>,
-        tx?: PgTransaction<T>
+        tx?: PgTransaction<T, any, any>
     ): Promise<void> {
         if (identifiers.length === 0) {
             return;
@@ -274,7 +270,7 @@ export class AnnotationsRepository {
     /**
      * Restore a soft-deleted annotation
      */
-    static async restore(id: number): Promise<void> {
+    static async restore(db: DB, id: number): Promise<void> {
         await db.update(schema.annotation)
             .set({ deletedAt: null })
             .where(eq(schema.annotation.id, id));

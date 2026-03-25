@@ -1,18 +1,19 @@
 import { PageStat } from '@koinsight/common/types';
 import { eq, isNull, and } from 'drizzle-orm';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
+import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 
 
 export class StatsRepository {
     private static updateStartTime(stat: PageStat): PageStat {
         return {
             ...stat,
-            start_time: stat.start_time * 1000,
+            startTime: stat.startTime * 1000,
         };
     }
 
-    static async getAll(): Promise<PageStat[]> {
+    static async getAll(db: DB): Promise<PageStat[]> {
         const stats = await db.select({
             id: schema.pageStat.id,
             bookMd5: schema.pageStat.bookMd5,
@@ -29,16 +30,17 @@ export class StatsRepository {
         return stats.map(this.updateStartTime);
     }
 
-    static async getByBookMD5(book_md5: string): Promise<PageStat[]> {
+    static async getByBookMD5(db: DB, book_md5: string): Promise<PageStat[]> {
         const stats = await db.select().from(schema.pageStat).where(eq(schema.pageStat.bookMd5, book_md5));
         return stats.map(this.updateStartTime);
     }
 
-    static async insert(data: PageStat): Promise<void> {
+    static async insert(db: DB, data: PageStat): Promise<void> {
         await db.insert(schema.pageStat).values(data);
     }
 
     static async update(
+        db: DB,
         book_md5: string,
         device_id: string,
         page: number,
@@ -47,7 +49,7 @@ export class StatsRepository {
     ): Promise<void> {
         const mapped: any = {};
         if ('duration' in data) mapped.duration = data.duration;
-        if ('total_pages' in data || 'totalPages' in data) mapped.totalPages = data.total_pages || data.totalPages;
+        if ('total_pages' in data || 'totalPages' in data) mapped.totalPages = (data as any).total_pages || (data as any).totalPages;
 
         await db.update(schema.pageStat)
             .set(mapped)

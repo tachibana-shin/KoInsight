@@ -5,7 +5,7 @@ import { Genre } from '@koinsight/common/types/genre';
 import { sum } from 'ramda';
 import { AnnotationsRepository } from 'src/annotations/AnnotationsRepository';
 import { GenreRepository } from '../genres/genre-repository';
-import { db } from '../db';
+import { DB } from '../db';
 import * as schema from '../db/schema';
 import { StatsRepository } from 'src/stats/StatsRepository';
 import { BooksService } from './books-service';
@@ -13,31 +13,31 @@ import { eq, and, isNull, like, sql, InferInsertModel } from 'drizzle-orm';
 import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 
 export class BooksRepository {
-  static async getAll(): Promise<Book[]> {
+  static async getAll(db: DB): Promise<Book[]> {
     const result = await db.select().from(schema.book).where(isNull(schema.book.softDeletedAt));
     return result;
   }
 
-  static async getById(id: number): Promise<Book | void> {
+  static async getById(db: DB, id: number): Promise<Book | void> {
     const [result] = await db.select().from(schema.book).where(eq(schema.book.id, id));
     return result;
   }
 
-  static async insert(book: Book): Promise<void> {
+  static async insert(db: DB, book: Book): Promise<void> {
     await db.insert(schema.book).values(book);
   }
 
-  static async update(id: number, data: PgUpdateSetSource<typeof schema.book>): Promise<void> {
+  static async update(db: DB, id: number, data: PgUpdateSetSource<typeof schema.book>): Promise<void> {
     await db.update(schema.book).set(data).where(eq(schema.book.id, id));
   }
 
-  static async softDelete(id: number, soft_deleted = true): Promise<void> {
+  static async softDelete(db: DB, id: number, soft_deleted = true): Promise<void> {
     await db.update(schema.book)
       .set({ softDeletedAt: soft_deleted ? new Date() : null })
       .where(eq(schema.book.id, id));
   }
 
-  static async delete(book: Book) {
+  static async delete(db: DB, book: Book) {
     await db.transaction(async (tx) => {
       await tx.delete(schema.bookDevice).where(eq(schema.bookDevice.bookMd5, book.md5));
       await tx.delete(schema.bookGenre).where(eq(schema.bookGenre.bookMd5, book.md5));
@@ -45,17 +45,17 @@ export class BooksRepository {
     });
   }
 
-  static async searchByTitle(title: string): Promise<Book[]> {
+  static async searchByTitle(db: DB, title: string): Promise<Book[]> {
     const result = await db.select().from(schema.book).where(like(schema.book.title, `%${title}%`));
     return result;
   }
 
-  static async getBookDevices(md5: Book['md5']): Promise<BookDevice[]> {
+  static async getBookDevices(db: DB, md5: Book['md5']): Promise<BookDevice[]> {
     const result = await db.select().from(schema.bookDevice).where(eq(schema.bookDevice.bookMd5, md5));
     return result;
   }
 
-  static async getAllWithData(returnDeleted: boolean = false): Promise<BookWithData[]> {
+  static async getAllWithData(db: DB, returnDeleted: boolean = false): Promise<BookWithData[]> {
     // In Postgres, we use json_agg and json_build_object.
     // Drizzle can do this with sql chunks.
     const books = await db.select({
@@ -100,9 +100,9 @@ export class BooksRepository {
 
     return Promise.all(
       books.map(async (book): Promise<BookWithData> => {
-        const stats = await StatsRepository.getByBookMD5(book.md5);
-        const annotations = await AnnotationsRepository.getByBookMd5(book.md5);
-        const annotationCounts = await AnnotationsRepository.getCountsByType(book.md5);
+        const stats = await StatsRepository.getByBookMD5(db, book.md5);
+        const annotations = await AnnotationsRepository.getByBookMd5(db, book.md5);
+        const annotationCounts = await AnnotationsRepository.getCountsByType(db, book.md5);
 
         const genres = (book.genres || []) as Genre[];
         const bookDevices = (book.book_devices || []) as BookDevice[];
@@ -118,40 +118,39 @@ export class BooksRepository {
         const totalReadTime = BooksService.getTotalReadTime(normalizedDevices);
         const totalReadPages = BooksService.getTotalReadPages(book, stats);
         const uniqueReadPages = BooksService.getUniqueReadPages(book, stats);
-        const started_reading = BooksService.getStartedReading(stats);
-        const read_per_day = BooksService.getReadPerDay(stats);
-
+        const startedReading = BooksService.getStartedReading(stats);
+        const readPerDay = BooksService.getReadPerDay(stats);
         return {
           ...book,
-          last_open: lastOpen, // Override camelCase from db with computed snake_case
-          total_read_time: totalReadTime,
-          total_read_pages: totalReadPages,
-          genres: genres,
-          device_data: normalizedDevices,
-          total_pages: totalPages,
-          unique_read_pages: uniqueReadPages,
+          lastOpen,
+          totalReadTime,
+          totalReadPages,
+          genres,
+          deviceData: normalizedDevices,
+          totalPages,
+          uniqueReadPages,
           highlights: sum(normalizedDevices.map((device) => device.highlights ?? 0)),
           notes: sum(normalizedDevices.map((device) => device.notes ?? 0)),
-          read_per_day,
-          started_reading,
+          readPerDay,
+          startedReading,
           annotations,
-          highlights_count: annotationCounts.highlight,
-          notes_count: annotationCounts.note,
-          bookmarks_count: annotationCounts.bookmark,
-          deleted_count: await AnnotationsRepository.getDeletedCount(book.md5),
+          highlightsCount: annotationCounts.highlight,
+          notesCount: annotationCounts.note,
+          bookmarksCount: annotationCounts.bookmark,
+          deletedCount: await AnnotationsRepository.getDeletedCount(db, book.md5),
           stats,
         };
       })
     );
   }
 
-  static async addGenre(md5: Book['md5'], genreName: string) {
-    const genre = await GenreRepository.findOrCreate({ name: genreName });
+  static async addGenre(db: DB, md5: Book['md5'], genreName: string) {
+    const genre = await GenreRepository.findOrCreate(db, { name: genreName });
     if (!genre) return;
     await db.insert(schema.bookGenre).values({ bookMd5: md5, genreId: genre.id }).onConflictDoNothing();
   }
 
-  static async setReferencePages(id: number, referencePages: number | null) {
+  static async setReferencePages(db: DB, id: number, referencePages: number | null) {
     await db.update(schema.book).set({ referencePages }).where(eq(schema.book.id, id));
   }
 }

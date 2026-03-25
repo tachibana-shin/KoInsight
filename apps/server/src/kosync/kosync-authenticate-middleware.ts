@@ -1,14 +1,11 @@
 import { Context, Next } from 'hono';
 import { UserRepository } from './user-repository';
+import { AppContext } from '../types';
 import { User } from '@koinsight/common/types/user';
 
-declare module 'hono' {
-  interface ContextVariableMap {
-    user: User;
-  }
-}
-
-export const authenticate = async (c: Context, next: Next) => {
+export const authenticate = async (c: Context<AppContext>, next: Next) => {
+  // Use any for context because Hono middleware type is tricky with generics
+  // But we can still get 'db' from it.
   const username = c.req.header('x-auth-user');
   const key = c.req.header('x-auth-key');
 
@@ -16,8 +13,9 @@ export const authenticate = async (c: Context, next: Next) => {
     return c.json({ error: 'Missing authentication headers' }, 401);
   }
 
+  const db = c.get('db');
   try {
-    const user = await UserRepository.login(username, key);
+    const user = await UserRepository.login(db, username, key);
 
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401);

@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { appConfig } from '../config';
 import { UploadService } from './upload-service';
 import { WebDavService } from './webdav-service';
+import { AppContext } from '../types';
 
-const upload = new Hono();
+const upload = new Hono<AppContext>();
 
 upload.post('/', async (c) => {
   const body = await c.req.parseBody();
@@ -29,7 +30,8 @@ upload.post('/', async (c) => {
 
   try {
     const { newBooks, newPageStats } = UploadService.extractDataFromStatisticsDb(bsqlite);
-    await UploadService.uploadStatisticData(newBooks, newPageStats);
+    const db = c.get('db');
+    await UploadService.uploadStatisticData(db, newBooks, newPageStats);
 
     // Backup to WebDAV if configured
     try {

@@ -1,8 +1,6 @@
-require('dotenv').config();
-
 import path from 'path';
 
-const BASE_PATH = __dirname;
+const BASE_PATH = import.meta.dirname ?? '';
 const DATA_PATH = process.env.DATA_PATH || path.resolve(BASE_PATH, '../../../', 'data');
 const MAX_FILE_SIZE_MB = Number(process.env.MAX_FILE_SIZE_MB) || 100;
 
