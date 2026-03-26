@@ -4,9 +4,11 @@ import { notifications } from '@mantine/notifications';
 import { IconUpload } from '@tabler/icons-react';
 import { FormEvent, JSX, useState } from 'react';
 import { mutate } from 'swr';
+import { useTranslation } from 'react-i18next';
 import { uploadDbFile } from '../../api/upload-db-file';
 
 export function UploadForm(): JSX.Element {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [modalOpened, { open, close }] = useDisclosure(false);
   const [message, setMessage] = useState('');
@@ -15,7 +17,7 @@ export function UploadForm(): JSX.Element {
     event.preventDefault();
 
     if (!file) {
-      setMessage('Please select a file before submitting.');
+      setMessage(t('upload.noFile'));
       return;
     }
 
@@ -29,8 +31,8 @@ export function UploadForm(): JSX.Element {
         // FIXME: this doesn't seem to work.
         await mutate('books');
         notifications.show({
-          title: 'Success',
-          message: 'File uploaded and validated successfully.',
+          title: t('upload.successTitle'),
+          message: t('upload.success'),
           position: 'top-center',
           color: 'green',
         });
@@ -40,7 +42,7 @@ export function UploadForm(): JSX.Element {
         const body = await response.json();
         setMessage(body?.error);
       } else {
-        setMessage('Failed to upload file.');
+        setMessage(t('upload.failed'));
       }
     } catch (error) {
       setMessage(`Error: ${error}`);
@@ -50,7 +52,7 @@ export function UploadForm(): JSX.Element {
   return (
     <>
       <Button leftSection={<IconUpload size={16} />} onClick={open} variant="light" size="sm">
-        Upload Statistics DB
+        {t('upload.button')}
       </Button>
       <Modal
         styles={{
@@ -61,7 +63,7 @@ export function UploadForm(): JSX.Element {
             paddingTop: 'var(--mantine-spacing-xs)',
           },
         }}
-        title="Upload KOReader statistics database"
+        title={t('upload.modalTitle')}
         opened={modalOpened}
         size="lg"
         onClose={close}
@@ -69,16 +71,16 @@ export function UploadForm(): JSX.Element {
         centered
       >
         <Flex direction="column" gap="sm" mt="lg">
-          <Text>Upload your KOReader statistics.sqlite3 file.</Text>
+          <Text>{t('upload.description')}</Text>
           <form onSubmit={handleSubmit} encType="multipart/form-data">
             <FileInput
-              label="Choose Database file"
+              label={t('upload.fileLabel')}
               placeholder="statistics.sqlite3"
               onChange={(e) => setFile(e)}
               accept=".sqlite,.sqlite3"
               mb="sm"
             />
-            <Button type="submit">Upload</Button>
+            <Button type="submit">{t('upload.submit')}</Button>
           </form>
           {message && <p>{message}</p>}
         </Flex>

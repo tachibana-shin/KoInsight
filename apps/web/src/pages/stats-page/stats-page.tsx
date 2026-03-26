@@ -12,6 +12,7 @@ import {
 import { IconClock, IconMaximize, IconPageBreak } from '@tabler/icons-react';
 import { JSX, useMemo } from 'react';
 import { BarProps } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useBooks } from '../../api/books';
 import { usePageStats } from '../../api/use-page-stats';
 import { CustomBar } from '../../components/charts/custom-bar';
@@ -21,6 +22,7 @@ import { formatSecondsToHumanReadable } from '../../utils/dates';
 import { WeekStats } from './week-stats';
 
 export function StatsPage(): JSX.Element {
+  const { t } = useTranslation();
   const colorScheme = useComputedColorScheme();
   const { colors } = useMantineTheme();
   const { data: books, isLoading: booksLoading } = useBooks();
@@ -59,7 +61,7 @@ export function StatsPage(): JSX.Element {
 
   return (
     <>
-      <Title mb="sm">Reading statistics</Title>
+      <Title mb="sm">{t('stats.title')}</Title>
       <Text
         mt={4}
         mb="md"
@@ -73,49 +75,49 @@ export function StatsPage(): JSX.Element {
         fw={900}
       >
         {last7DaysReadTime > 0 ? (
-          <>You read for {formatSecondsToHumanReadable(last7DaysReadTime)} this week. Keep it up!</>
+          <>{t('stats.readThisWeek', { duration: formatSecondsToHumanReadable(last7DaysReadTime) })}</>
         ) : (
-          <>You haven't read this week yet. No better time to start!</>
+          <>{t('stats.noReadThisWeek')}</>
         )}
       </Text>
       <Box my="xl">
         <Statistics
           data={[
             {
-              label: 'Total read time',
+              label: t('stats.totalReadTime'),
               value: formatSecondsToHumanReadable(totalReadingTime),
               icon: IconClock,
             },
             {
-              label: 'Total pages read',
+              label: t('stats.totalPagesRead'),
               value: totalPagesRead,
               icon: IconPageBreak,
             },
             {
-              label: 'Longest time reading in a day',
+              label: t('stats.longestDay'),
               value: formatSecondsToHumanReadable(longestDay),
               icon: IconMaximize,
             },
             {
-              label: 'Most pages in a day',
-              value: mostPagesInADay ?? 'N/A',
+              label: t('stats.mostPagesInADay'),
+              value: mostPagesInADay ?? t('stats.notAvailable'),
               icon: IconMaximize,
             },
           ]}
         />
       </Box>
       <Title mb="xl" order={3}>
-        Reading history
+        {t('stats.readingHistory')}
       </Title>
       <Box mb="xl">
         <ReadingCalendar />
       </Box>
       <Title mt="xl" mb={4} order={3}>
-        Weekly stats
+        {t('stats.weeklyStats')}
       </Title>
       <WeekStats stats={stats} booksByMd5={booksByMd5} />
       <Title mt="xl" order={3}>
-        Per day of the week
+        {t('stats.perDayOfWeek')}
       </Title>
       <BarChart
         h={300}
@@ -124,7 +126,7 @@ export function StatsPage(): JSX.Element {
         series={[
           {
             name: 'value',
-            label: 'Reading time',
+            label: t('stats.readingTime'),
             color: colorScheme === 'dark' ? 'koinsight.7' : 'koinsight.1',
           },
         ]}
@@ -142,7 +144,7 @@ export function StatsPage(): JSX.Element {
         valueFormatter={(value) => formatSecondsToHumanReadable(value)}
       />
       <Title mt="xl" order={3}>
-        Monthly reading time
+        {t('stats.monthlyReadingTime')}
       </Title>
       <BarChart
         h={300}
@@ -164,7 +166,7 @@ export function StatsPage(): JSX.Element {
         series={[
           {
             name: 'duration',
-            label: 'Reading time',
+            label: t('stats.readingTime'),
             color: colorScheme === 'dark' ? 'violet.7' : 'violet.1',
           },
         ]}

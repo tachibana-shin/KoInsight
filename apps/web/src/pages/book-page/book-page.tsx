@@ -27,6 +27,7 @@ import {
 import { sum } from 'ramda';
 import { JSX, useState } from 'react';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useBookWithData } from '../../api/use-book-with-data';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 import { BookCard } from './book-card';
@@ -36,6 +37,7 @@ import { BookPageManage } from './book-page-manage/book-page-manage';
 import { BookPageRaw } from './book-page-raw';
 
 export function BookPage(): JSX.Element {
+  const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const { data: book, isLoading, mutate } = useBookWithData(Number(id));
 
@@ -68,11 +70,11 @@ export function BookPage(): JSX.Element {
         <Tabs.List style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Flex>
             <Tabs.Tab value="calendar" leftSection={<IconCalendar size={16} />}>
-              Calendar
+              {t('book.calendar')}
             </Tabs.Tab>
             <Tabs.Tab value="annotations" leftSection={<IconHighlight size={16} />}>
               <Flex align="center" gap="xs">
-                Annotations{' '}
+                {t('book.annotations')}{' '}
                 {book.annotations.length > 0 && (
                   <Badge color="gray" size="xs">
                     {book.annotations.length}
@@ -81,11 +83,11 @@ export function BookPage(): JSX.Element {
               </Flex>
             </Tabs.Tab>
             <Tabs.Tab value="manage" leftSection={<IconSettings size={16} />}>
-              Manage data
+              {t('book.manageData')}
             </Tabs.Tab>
             {tabValue === 'raw-values' && (
               <Tabs.Tab value="raw-values" leftSection={<IconTable size={16} />}>
-                Raw Values
+                {t('book.rawValues')}
               </Tabs.Tab>
             )}
           </Flex>
@@ -104,7 +106,7 @@ export function BookPage(): JSX.Element {
                 }}
               >
                 <Flex align="center" gap="xs">
-                  <span>Advanced</span>
+                  <span>{t('book.advanced')}</span>
                   <IconChevronDown size={16} />
                 </Flex>
               </UnstyledButton>
@@ -114,10 +116,10 @@ export function BookPage(): JSX.Element {
                 leftSection={<IconTable size={16} />}
                 onClick={() => setTabValue('raw-values')}
               >
-                Raw Values
+                {t('book.rawValues')}
               </Menu.Item>
               <Menu.Item leftSection={<IconRefresh size={16} />} onClick={() => mutate()}>
-                Reload book data
+                {t('book.reloadBookData')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -152,6 +154,7 @@ export function BookPage(): JSX.Element {
 }
 
 function StatsCard({ book }: { book: BookWithData }): JSX.Element {
+  const { t } = useTranslation();
   const bookPages =
     book?.referencePages ||
     book?.deviceData.reduce((acc, device) => Math.max(acc, device.pages || 0), 0) ||
@@ -173,7 +176,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
     >
       <Stack gap={0} align="center">
         <Text size="sm" c="dimmed" tt="uppercase" fw={700}>
-          Reading progress
+          {t('book.readingProgress')}
         </Text>
         <Group align="center" justify="space-between" wrap="nowrap">
           <Stack align="center" gap="xs">
@@ -187,7 +190,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
                     {Math.round((book.uniqueReadPages / (bookPages || 1)) * 100)}%
                   </Text>
                   <Text size="xs" c="dimmed" ta="center" fw="bold">
-                    {book.uniqueReadPages} / {bookPages} <br /> pages read
+                    {book.uniqueReadPages} / {bookPages} <br /> {t('book.pagesRead')}
                   </Text>
                 </Stack>
               }
@@ -205,7 +208,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
               <IconClock size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
               <Stack gap={0}>
                 <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Total read time
+                  {t('book.totalReadTime')}
                 </Text>
                 <Text size="md" fw={600}>
                   {formatSecondsToHumanReadable(book.totalReadTime)}
@@ -217,7 +220,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
               <IconClockHour4 size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
               <Stack gap={0}>
                 <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Average per day
+                  {t('book.averagePerDay')}
                 </Text>
                 <Text size="md" fw={600}>
                   {formatSecondsToHumanReadable(avgPerDay)}
@@ -231,7 +234,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
               <IconCalendar size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
               <Stack gap={0}>
                 <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Days reading
+                  {t('book.daysReading')}
                 </Text>
                 <Text size="md" fw={600}>
                   {Object.keys(book.readPerDay).length}
@@ -243,7 +246,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
               <IconFile size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
               <Stack gap={0}>
                 <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Avg time per page
+                  {t('book.avgTimePerPage')}
                 </Text>
                 <Text size="md" fw={600}>
                   {book.stats.length > 0

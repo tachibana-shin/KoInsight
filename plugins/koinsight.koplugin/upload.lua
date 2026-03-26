@@ -13,12 +13,44 @@ local API_UPLOAD_LOCATION = "/api/plugin/import"
 local API_DEVICE_LOCATION = "/api/plugin/device"
 
 local KoInsightUpload = {}
+local cached_token = nil
+
+local function authenticate(server_url, password)
+  cached_token = nil
+  if password == nil or password == "" then
+    return true
+  end
+
+  local url = server_url .. "/api/auth/login"
+  local body = JSON.encode({ password = password })
+
+  local login_headers = {
+    ["Content-Type"] = "application/json",
+    ["Content-Length"] = tostring(#body),
+  }
+
+  local ok, response = callApi("POST", url, login_headers, body)
+
+  if ok and response and response.token then
+    cached_token = response.token
+    return true
+  else
+    logger.err("[KoInsight] Authentication failed")
+    UIManager:show(InfoMessage:new({
+      text = _("Authentication failed. Please check your API password."),
+    }))
+    return false
+  end
+end
 
 function get_headers(body)
   local headers = {
     ["Content-Type"] = "application/json",
     ["Content-Length"] = tostring(#body),
   }
+  if cached_token then
+    headers["Authorization"] = "Bearer " .. cached_token
+  end
   return headers
 end
 
@@ -229,7 +261,7 @@ function bulk_sync_all_books(server_url, progress_callback)
 end
 
 -- Sync current book only (stats + current book annotations)
-function KoInsightUpload.syncCurrentBook(server_url, silent)
+function KoInsightUpload.syncCurrentBook(server_url, api_password, silent)
   if silent == nil then
     silent = false
   end
@@ -239,17 +271,28 @@ function KoInsightUpload.syncCurrentBook(server_url, silent)
     }))
     return
   end
+  
+  if not authenticate(server_url, api_password) then
+    return
+  end
 
   send_device_data(server_url, silent)
   send_statistics_data(server_url, silent)
 end
 
 -- Sync all books (stats + all book annotations)
-function KoInsightUpload.syncAllBooks(server_url, progress_callback)
+function KoInsightUpload.syncAllBooks(server_url, api_password, progress_callback)
   if server_url == nil or server_url == "" then
     UIManager:show(InfoMessage:new({
       text = _("Please configure the server URL first."),
     }))
+    return
+  end
+  
+  if not authenticate(server_url, api_password) then
+    if progress_callback then
+      progress_callback({ phase = "complete", total = 0, success = 0, failed = 0 })
+    end
     return
   end
 
