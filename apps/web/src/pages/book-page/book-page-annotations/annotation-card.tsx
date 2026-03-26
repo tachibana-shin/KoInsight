@@ -20,7 +20,7 @@ type AnnotationCardProps = {
 
 export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.Element {
   const getTypeIcon = () => {
-    switch (annotation.annotationType) {
+    switch (annotation.annotation_type) {
       case 'highlight':
         return <IconHighlight size={14} />;
       case 'note':
@@ -45,7 +45,7 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
   //   }
   // };
 
-  const isDeleted = Boolean(annotation.deletedAt);
+  const isDeleted = Boolean(annotation.deleted_at);
 
   return (
     <Paper
@@ -59,17 +59,17 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
       <Stack gap="xs">
         <Group justify="space-between">
           <Group gap="xs">
-            {annotation.annotationType === 'note' && (
+            {annotation.annotation_type === 'note' && (
               <Badge leftSection={getTypeIcon()} color="blue" variant="light" size="sm">
                 Note
               </Badge>
             )}
-            {annotation.annotationType === 'bookmark' && (
+            {annotation.annotation_type === 'bookmark' && (
               <Badge leftSection={getTypeIcon()} color="green" variant="light" size="sm">
                 Bookmark
               </Badge>
             )}
-            {annotation.annotationType === 'highlight' && (
+            {annotation.annotation_type === 'highlight' && (
               <Badge leftSection={getTypeIcon()} color="yellow" variant="light" size="sm">
                 Highlight
               </Badge>
@@ -129,9 +129,9 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
               <IconArticle size={16} /> {annotation.chapter}
             </Text>
           )}
-          {annotation.pageno && annotation.totalPages && (
+          {annotation.pageno && annotation.total_pages && (
             <Text size="xs" c="dimmed" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconVocabulary size={16} /> Page {annotation.pageno} of {annotation.totalPages}
+              <IconVocabulary size={16} /> Page {annotation.pageno} of {annotation.total_pages}
             </Text>
           )}
         </Group>

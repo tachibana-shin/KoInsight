@@ -11,7 +11,7 @@ export type BookReferencePagesProps = {
 
 export function BookReferencePages({ book }: BookReferencePagesProps) {
   const { t } = useTranslation();
-  const [referencePages, setReferencePages] = useState(book.referencePages ?? 0);
+  const [referencePages, setReferencePages] = useState(book.reference_pages ?? 0);
 
   const [updateLoading, setUpdateLoading] = useState(false);
 

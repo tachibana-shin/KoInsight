@@ -23,7 +23,7 @@ export class UserRepository {
     if (!user) {
       return null;
     }
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       return null;
     }
@@ -46,7 +46,7 @@ export class UserRepository {
     const passwordHash = await hashPassword(password);
     await db.insert(schema.user).values({
       username,
-      passwordHash: passwordHash,
+      password_hash: passwordHash,
     });
   }
 }

@@ -22,8 +22,8 @@ export class GenreRepository {
         name: schema.genre.name,
       })
       .from(schema.genre)
-      .innerJoin(schema.bookGenre, eq(schema.bookGenre.genreId, schema.genre.id))
-      .where(eq(schema.bookGenre.bookMd5, md5));
+      .innerJoin(schema.bookGenre, eq(schema.bookGenre.genre_id, schema.genre.id))
+      .where(eq(schema.bookGenre.book_md5, md5));
 
     return results;
   }

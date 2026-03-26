@@ -18,10 +18,10 @@ export class AnnotationsRepository {
    * Get all annotations for a book, optionally filtered by device
    */
   static async getByBookMd5(db: DB, md5: string, deviceId?: string): Promise<Annotation[]> {
-    let whereClause: SQL = eq(schema.annotation.bookMd5, md5);
+    let whereClause: SQL = eq(schema.annotation.book_md5, md5);
 
     if (deviceId) {
-      whereClause = and(whereClause, eq(schema.annotation.deviceId, deviceId))!;
+      whereClause = and(whereClause, eq(schema.annotation.device_id, deviceId))!;
     }
 
     const annotations = await db
@@ -34,7 +34,7 @@ export class AnnotationsRepository {
       ...a,
       pos0: a.pos0 ? JSON.parse(a.pos0) : undefined,
       pos1: a.pos1 ? JSON.parse(a.pos1) : undefined,
-      deleted: Boolean(a.deletedAt),
+      deleted: Boolean(a.deleted_at),
     }));
   }
 
@@ -48,7 +48,7 @@ export class AnnotationsRepository {
     deviceId?: string
   ): Promise<Annotation[]> {
     const annotations = await this.getByBookMd5(db, md5, deviceId);
-    return annotations.filter((a) => a.annotationType === type);
+    return annotations.filter((a) => a.annotation_type === type);
   }
 
   /**
@@ -58,7 +58,7 @@ export class AnnotationsRepository {
     const annotations = await db
       .select()
       .from(schema.annotation)
-      .where(eq(schema.annotation.deviceId, deviceId))
+      .where(eq(schema.annotation.device_id, deviceId))
       .orderBy(desc(schema.annotation.datetime));
 
     return annotations.map((a) => ({
@@ -98,28 +98,28 @@ export class AnnotationsRepository {
         .insert(schema.annotation)
         .values({
           ...ka,
-          bookMd5,
-          deviceId,
+          book_md5: bookMd5,
+          device_id: deviceId,
           pos0: ka.pos0 ? JSON.stringify(ka.pos0) : undefined,
           pos1: ka.pos1 ? JSON.stringify(ka.pos1) : undefined,
-          annotationType: type,
-          pageRef: ka.page + '',
+          annotation_type: type,
+          page_ref: ka.page + '',
         } satisfies InferInsertModel<typeof schema.annotation>)
         .onConflictDoUpdate({
           target: [
-            schema.annotation.bookMd5,
-            schema.annotation.deviceId,
-            schema.annotation.pageRef,
+            schema.annotation.book_md5,
+            schema.annotation.device_id,
+            schema.annotation.page_ref,
             schema.annotation.datetime,
           ],
           set: {
             text: ka.text,
             note: ka.note,
-            datetimeUpdated: ka.datetime_updated,
+            datetime_updated: ka.datetime_updated,
             chapter: ka.chapter,
             drawer: ka.drawer,
             color: ka.color,
-            updatedAt: new Date(),
+            updated_at: new Date(),
           },
         });
     }
@@ -135,23 +135,11 @@ export class AnnotationsRepository {
     const [inserted] = await db
       .insert(schema.annotation)
       .values({
-        bookMd5: annotation.bookMd5,
-        deviceId: annotation.deviceId,
-        annotationType: annotation.annotationType,
-        text: annotation.text,
-        note: annotation.note,
-        drawer: annotation.drawer,
-        color: annotation.color,
-        chapter: annotation.chapter,
-        pageno: annotation.pageno,
-        pageRef: annotation.pageRef,
-        totalPages: annotation.totalPages,
+        ...annotation,
         pos0:
           typeof annotation.pos0 === 'object' ? JSON.stringify(annotation.pos0) : annotation.pos0,
         pos1:
           typeof annotation.pos1 === 'object' ? JSON.stringify(annotation.pos1) : annotation.pos1,
-        datetime: annotation.datetime,
-        datetimeUpdated: annotation.datetimeUpdated,
       })
       .returning();
 
@@ -186,7 +174,7 @@ export class AnnotationsRepository {
     if (data.color !== undefined) mapped.color = (data as any).color ?? null;
     if (data.chapter !== undefined) mapped.chapter = (data as any).chapter ?? null;
     if (data.pageno !== undefined) mapped.pageno = (data as any).pageno ?? null;
-    if (data.pageRef !== undefined) mapped.pageRef = (data as any).pageRef;
+    if (data.page_ref !== undefined) mapped.page_ref = (data as any).pageRef;
     if (data.pos0 !== undefined)
       mapped.pos0 =
         typeof (data as any).pos0 === 'object'
@@ -197,9 +185,9 @@ export class AnnotationsRepository {
         typeof (data as any).pos1 === 'object'
           ? JSON.stringify((data as any).pos1)
           : ((data as any).pos1 ?? null);
-    if (data.datetimeUpdated !== undefined)
-      mapped.datetimeUpdated = (data as any).datetimeUpdated ?? null;
-    if (data.updatedAt !== undefined) mapped.updatedAt = (data as any).updatedAt;
+    if (data.datetime_updated !== undefined)
+      mapped.datetime_updated = (data as any).datetimeUpdated ?? null;
+    if (data.updatedAt !== undefined) mapped.updated_at = (data as any).updatedAt;
 
     await db.update(schema.annotation).set(mapped).where(eq(schema.annotation.id, id));
   }
@@ -215,7 +203,7 @@ export class AnnotationsRepository {
    * Delete all annotations for a book
    */
   static async deleteByBookMd5(db: DB, md5: string): Promise<void> {
-    await db.delete(schema.annotation).where(eq(schema.annotation.bookMd5, md5));
+    await db.delete(schema.annotation).where(eq(schema.annotation.book_md5, md5));
   }
 
   /**
@@ -224,12 +212,12 @@ export class AnnotationsRepository {
   static async getCountsByType(db: DB, md5: string): Promise<Record<AnnotationType, number>> {
     const counts = await db
       .select({
-        type: schema.annotation.annotationType,
+        type: schema.annotation.annotation_type,
         count: sql<number>`count(*)`,
       })
       .from(schema.annotation)
-      .where(and(eq(schema.annotation.bookMd5, md5), isNull(schema.annotation.deletedAt)))
-      .groupBy(schema.annotation.annotationType);
+      .where(and(eq(schema.annotation.book_md5, md5), isNull(schema.annotation.deleted_at)))
+      .groupBy(schema.annotation.annotation_type);
 
     const result: Record<AnnotationType, number> = {
       highlight: 0,
@@ -253,7 +241,7 @@ export class AnnotationsRepository {
         count: sql<number>`count(*)`,
       })
       .from(schema.annotation)
-      .where(and(eq(schema.annotation.bookMd5, md5), isNotNull(schema.annotation.deletedAt)));
+      .where(and(eq(schema.annotation.book_md5, md5), isNotNull(schema.annotation.deleted_at)));
 
     return result ? Number(result.count) : 0;
   }
@@ -264,7 +252,7 @@ export class AnnotationsRepository {
   static async markAsDeleted(db: DB, id: number): Promise<void> {
     await db
       .update(schema.annotation)
-      .set({ deletedAt: new Date() })
+      .set({ deleted_at: new Date() })
       .where(eq(schema.annotation.id, id));
   }
 
@@ -290,14 +278,14 @@ export class AnnotationsRepository {
     for (const { page_ref, datetime } of identifiers) {
       await executor
         .update(schema.annotation)
-        .set({ deletedAt: new Date() })
+        .set({ deleted_at: new Date() })
         .where(
           and(
-            eq(schema.annotation.bookMd5, bookMd5),
-            eq(schema.annotation.deviceId, deviceId),
-            eq(schema.annotation.pageRef, page_ref),
+            eq(schema.annotation.book_md5, bookMd5),
+            eq(schema.annotation.device_id, deviceId),
+            eq(schema.annotation.page_ref, page_ref),
             eq(schema.annotation.datetime, datetime),
-            isNull(schema.annotation.deletedAt)
+            isNull(schema.annotation.deleted_at)
           )
         );
     }
@@ -307,6 +295,6 @@ export class AnnotationsRepository {
    * Restore a soft-deleted annotation
    */
   static async restore(db: DB, id: number): Promise<void> {
-    await db.update(schema.annotation).set({ deletedAt: null }).where(eq(schema.annotation.id, id));
+    await db.update(schema.annotation).set({ deleted_at: null }).where(eq(schema.annotation.id, id));
   }
 }

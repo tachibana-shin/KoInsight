@@ -10,26 +10,26 @@ import { BooksRepository } from './books-repository';
 
 export class BooksService {
   static getTotalPages(book: Book, bookDevices: BookDevice[]): number {
-    const refPages = book.referencePages;
+    const refPages = book.reference_pages;
     const maxPages = Math.max(...bookDevices.map((device) => device.pages || 0));
     return refPages || maxPages;
   }
 
   static getTotalReadTime(bookDevices: BookDevice[]): number {
     return bookDevices.reduce((acc, device) => {
-      const time = device.totalReadTime;
+      const time = device.total_read_time;
       return acc + (time || 0);
     }, 0);
   }
 
   static getStartedReading(stats: PageStat[]): number {
     if (stats.length === 0) return 0;
-    return stats.reduce((acc, stat) => Math.min(acc, stat.startTime), Infinity);
+    return stats.reduce((acc, stat) => Math.min(acc, stat.start_time), Infinity);
   }
 
   static getLastOpen(bookDevices: BookDevice[]): number {
     return bookDevices.reduce((acc, device) => {
-      const lastOpen = device.lastOpen;
+      const lastOpen = device.last_open;
       return Math.max(acc, lastOpen || 0);
     }, 0);
   }
@@ -37,7 +37,7 @@ export class BooksService {
   static getReadPerDay(stats: PageStat[]): Record<string, number> {
     return stats.reduce(
       (acc, stat) => {
-        const day = startOfDay(stat.startTime).getTime();
+        const day = startOfDay(stat.start_time).getTime();
         acc[day] = (acc[day] || 0) + stat.duration;
 
         return acc;
@@ -48,12 +48,12 @@ export class BooksService {
 
   static getUniqueReadPages(book: Book, stats: PageStat[]): number {
     const readPages: Range[] = [];
-    const refPages = book.referencePages;
+    const refPages = book.reference_pages;
 
     stats.forEach((stat) => {
       if (refPages) {
-        const startRefPage = (Math.max(stat.page - 1, 0) * refPages) / stat.totalPages;
-        const endRefPage = (stat.page * refPages) / stat.totalPages;
+        const startRefPage = (Math.max(stat.page - 1, 0) * refPages) / stat.total_pages;
+        const endRefPage = (stat.page * refPages) / stat.total_pages;
 
         const range = [startRefPage, endRefPage] as Range;
 
@@ -67,11 +67,11 @@ export class BooksService {
   }
 
   static getTotalReadPages(book: Book, stats: PageStat[]): number {
-    const refPages = book.referencePages;
+    const refPages = book.reference_pages;
     return Math.round(
       stats.reduce((acc, stat) => {
         if (refPages) {
-          return acc + (1 / stat.totalPages) * refPages;
+          return acc + (1 / stat.total_pages) * refPages;
         } else {
           return acc + 1;
         }

@@ -18,11 +18,11 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
     let filtered = book.annotations;
 
     // Filter by type
-    filtered = filtered.filter((a) => types.includes(a.annotationType as AnnotationType));
+    filtered = filtered.filter((a) => types.includes(a.annotation_type as AnnotationType));
 
     // Filter by deleted status
     if (!showDeleted) {
-      filtered = filtered.filter((a) => !a.deletedAt);
+      filtered = filtered.filter((a) => !a.deleted_at);
     }
 
     // Filter by search text
@@ -66,7 +66,7 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
       let key = '';
 
       if (groupBy === 'type') {
-        key = annotation.annotationType;
+        key = annotation.annotation_type;
       } else if (groupBy === 'chapter') {
         key = annotation.chapter || t('annotations.unknownChapter');
       }

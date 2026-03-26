@@ -56,7 +56,7 @@ export class ImageUploadService {
 
     if (provider !== 'local') {
       const url = await this.uploadBuffer(imageBuffer, title);
-      await db.update(schema.book).set({ coverUrl: url }).where(eq(schema.book.id, book.id));
+      await db.update(schema.book).set({ cover_url: url }).where(eq(schema.book.id, book.id));
     } else {
       await CoversService.upload(book, file);
     }

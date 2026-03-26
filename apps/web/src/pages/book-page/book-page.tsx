@@ -156,7 +156,7 @@ export function BookPage(): JSX.Element {
 function StatsCard({ book }: { book: BookWithData }): JSX.Element {
   const { t } = useTranslation();
   const bookPages =
-    book?.referencePages ||
+    book?.reference_pages ||
     book?.deviceData.reduce((acc, device) => Math.max(acc, device.pages || 0), 0) ||
     0;
 

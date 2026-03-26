@@ -40,7 +40,7 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
           role="button"
           onClick={() => navigate(getBookPath(book.id))}
         >
-          {book.softDeletedAt ? (
+          {book.soft_deleted_at ? (
             <Tooltip label={t('book.hidden')} withArrow>
               <IconEyeClosed size={16} className={style.BookHiddenIndicator} />
             </Tooltip>
@@ -51,7 +51,7 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
             w={cardWidth}
             alt={book.title ?? undefined}
             fallbackSrc="/book-placeholder-small.png"
-            className={book.softDeletedAt ? style.BookHidden : undefined}
+            className={book.soft_deleted_at ? style.BookHidden : undefined}
           />
           <Progress
             radius={0}

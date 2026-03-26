@@ -53,11 +53,11 @@ export class UploadService {
     const dbPageStats = extractRows<KoReaderPageStat>('SELECT * FROM page_stat_data');
 
     const newPageStats: Omit<PageStat, 'id'>[] = dbPageStats.map(({ id_book, ...stat }) => ({
-      bookMd5: newBooks.find((book) => book.id === id_book)!.md5,
-      deviceId: this.UNKNOWN_DEVICE_ID,
+      book_md5: newBooks.find((book) => book.id === id_book)!.md5,
+      device_id: this.UNKNOWN_DEVICE_ID,
       ...stat,
-      totalPages: stat.total_pages,
-      startTime: stat.start_time,
+      total_pages: stat.total_pages,
+      start_time: stat.start_time,
     }));
 
     return { newBooks, newPageStats };
@@ -77,8 +77,8 @@ export class UploadService {
           typeof s === 'object' &&
           Number.isFinite(s.duration) &&
           s.duration > 0 &&
-          Number.isFinite(s.totalPages) &&
-          s.totalPages > 0
+          Number.isFinite(s.total_pages) &&
+          s.total_pages > 0
       );
 
       // Insert books
@@ -96,7 +96,7 @@ export class UploadService {
       }
 
       const deviceId =
-        safePageStats.find((s) => s.deviceId)?.deviceId ??
+        safePageStats.find((s) => s.device_id)?.device_id ??
         deviceIdOverride ??
         this.UNKNOWN_DEVICE_ID;
 
@@ -117,14 +117,14 @@ export class UploadService {
         const total_read_pages = (book.total_read_pages ?? 0) > 0 ? book.total_read_pages : 0;
 
         const values = {
-          bookMd5: book.md5,
-          deviceId: deviceId,
+          book_md5: book.md5,
+          device_id: deviceId,
           pages: book.pages,
           notes: book.notes,
           highlights: book.highlights,
-          lastOpen: last_open,
-          totalReadTime: total_read_time,
-          totalReadPages: total_read_pages,
+          last_open: last_open,
+          total_read_time: total_read_time,
+          total_read_pages: total_read_pages,
         };
 
         const updateData: PgUpdateSetSource<typeof schema.bookDevice> = {
@@ -132,15 +132,15 @@ export class UploadService {
           notes: values.notes,
           highlights: values.highlights,
         };
-        if (last_open > 0) updateData.lastOpen = last_open;
-        if ((total_read_time ?? 0) > 0) updateData.totalReadTime = total_read_time;
-        if ((total_read_pages ?? 0) > 0) updateData.totalReadPages = total_read_pages;
+        if (last_open > 0) updateData.last_open = last_open;
+        if ((total_read_time ?? 0) > 0) updateData.total_read_time = total_read_time;
+        if ((total_read_pages ?? 0) > 0) updateData.total_read_pages = total_read_pages;
 
         await tx
           .insert(schema.bookDevice)
           .values(values)
           .onConflictDoUpdate({
-            target: [schema.bookDevice.bookMd5, schema.bookDevice.deviceId],
+            target: [schema.bookDevice.book_md5, schema.bookDevice.device_id],
             set: updateData,
           });
       }
@@ -151,23 +151,23 @@ export class UploadService {
           await tx
             .insert(schema.pageStat)
             .values({
-              bookMd5: stat.bookMd5,
-              deviceId: deviceId,
+              book_md5: stat.book_md5,
+              device_id: deviceId,
               page: stat.page,
               duration: stat.duration,
-              totalPages: stat.totalPages,
-              startTime: stat.startTime,
+              total_pages: stat.total_pages,
+              start_time: stat.start_time,
             })
             .onConflictDoUpdate({
               target: [
-                schema.pageStat.bookMd5,
-                schema.pageStat.deviceId,
+                schema.pageStat.book_md5,
+                schema.pageStat.device_id,
                 schema.pageStat.page,
-                schema.pageStat.startTime,
+                schema.pageStat.start_time,
               ],
               set: {
                 duration: stat.duration,
-                totalPages: stat.totalPages,
+                total_pages: stat.total_pages,
               },
             });
         }
@@ -192,15 +192,15 @@ export class UploadService {
   ): Promise<void> {
     const existingAnnotations = await tx
       .select({
-        pageRef: schema.annotation.pageRef,
+        pageRef: schema.annotation.page_ref,
         datetime: schema.annotation.datetime,
       })
       .from(schema.annotation)
       .where(
         and(
-          eq(schema.annotation.bookMd5, bookMd5),
-          eq(schema.annotation.deviceId, deviceId),
-          isNull(schema.annotation.deletedAt)
+          eq(schema.annotation.book_md5, bookMd5),
+          eq(schema.annotation.device_id, deviceId),
+          isNull(schema.annotation.deleted_at)
         )
       );
 

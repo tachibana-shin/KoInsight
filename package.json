@@ -20,7 +20,8 @@
     "lint": "oxlint --type-aware .",
     "format": "prettier -w .",
     "push:env": "wrangler secret bulk .env",
-    "deploy:wrangler": "bun build:web && bun push:env && wrangler deploy"
+    "deploy:wrangler": "bun typecheck && bun build:web && bun push:env && wrangler deploy",
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

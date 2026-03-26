@@ -8,7 +8,7 @@ export class StatsRepository {
   private static updateStartTime(stat: PageStat): PageStat {
     return {
       ...stat,
-      startTime: stat.startTime * 1000,
+      start_time: stat.start_time * 1000,
     };
   }
 
@@ -16,16 +16,16 @@ export class StatsRepository {
     const stats = await db
       .select({
         id: schema.pageStat.id,
-        bookMd5: schema.pageStat.bookMd5,
-        deviceId: schema.pageStat.deviceId,
+        book_md5: schema.pageStat.book_md5,
+        device_id: schema.pageStat.device_id,
         page: schema.pageStat.page,
         duration: schema.pageStat.duration,
-        totalPages: schema.pageStat.totalPages,
-        startTime: schema.pageStat.startTime,
+        total_pages: schema.pageStat.total_pages,
+        start_time: schema.pageStat.start_time,
       })
       .from(schema.pageStat)
-      .innerJoin(schema.book, eq(schema.pageStat.bookMd5, schema.book.md5))
-      .where(isNull(schema.book.softDeletedAt));
+      .innerJoin(schema.book, eq(schema.pageStat.book_md5, schema.book.md5))
+      .where(isNull(schema.book.soft_deleted_at));
 
     return stats.map(this.updateStartTime);
   }
@@ -34,7 +34,7 @@ export class StatsRepository {
     const stats = await db
       .select()
       .from(schema.pageStat)
-      .where(eq(schema.pageStat.bookMd5, book_md5));
+      .where(eq(schema.pageStat.book_md5, book_md5));
     return stats.map(this.updateStartTime);
   }
 
@@ -60,10 +60,10 @@ export class StatsRepository {
       .set(mapped)
       .where(
         and(
-          eq(schema.pageStat.bookMd5, book_md5),
-          eq(schema.pageStat.deviceId, device_id),
+          eq(schema.pageStat.book_md5, book_md5),
+          eq(schema.pageStat.device_id, device_id),
           eq(schema.pageStat.page, page),
-          eq(schema.pageStat.startTime, start_time)
+          eq(schema.pageStat.start_time, start_time)
         )
       );
   }

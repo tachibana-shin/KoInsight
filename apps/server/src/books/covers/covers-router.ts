@@ -15,8 +15,8 @@ covers.get('/', getBookById, async (c) => {
   const book = c.get('book');
   if (!book) return c.json({ error: 'Book not found' }, 404);
 
-  if (book.coverUrl) {
-    return c.redirect(book.coverUrl);
+  if (book.cover_url) {
+    return c.redirect(book.cover_url);
   }
 
   try {

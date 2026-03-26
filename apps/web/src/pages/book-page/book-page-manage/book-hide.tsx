@@ -67,7 +67,7 @@ export function BookHide({ book }: BookHideProps) {
       <Switch
         disabled={hideLoading}
         label={t('manage.hideLabel')}
-        checked={book.softDeletedAt !== null}
+        checked={book.soft_deleted_at !== null}
         onChange={(e) => onUpdate(e.target.checked)}
       ></Switch>
     </div>

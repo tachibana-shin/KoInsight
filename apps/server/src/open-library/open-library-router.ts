@@ -40,7 +40,7 @@ openLibrary.get('/cover', async (c) => {
 
     if (provider === 'flickr' || provider === 'imgur') {
       const url = await ImageUploadService.uploadBuffer(coverBuffer, `cover-${book.md5}`);
-      await BooksRepository.update(db, book.id, { coverUrl: url });
+      await BooksRepository.update(db, book.id, { cover_url: url });
     } else {
       await CoversService.uploadBuffer(book, coverBuffer, '.jpg');
     }

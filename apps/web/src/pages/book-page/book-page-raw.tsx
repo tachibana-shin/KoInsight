@@ -28,7 +28,7 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
     [devices]
   );
 
-  const dates = book.stats.map((stat) => stat.startTime);
+  const dates = book.stats.map((stat) => stat.start_time);
   const pages = book.stats.map((stat) => stat.page);
   const min = dates.length > 0 ? new Date(apply(Math.min, dates)) : new Date();
   const max = dates.length > 0 ? new Date(apply(Math.max, dates)) : new Date();
@@ -41,8 +41,8 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
   const visibleEvents = book.stats.filter(
     (stat) =>
       (!page || stat.page === page) &&
-      stat.startTime >= startDate.getTime() &&
-      stat.startTime <= endDate.getTime()
+      stat.start_time >= startDate.getTime() &&
+      stat.start_time <= endDate.getTime()
   );
 
   return (
@@ -84,10 +84,10 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
           {visibleEvents.map((stat) => (
             <Table.Tr key={JSON.stringify(stat)}>
               <Table.Td>{stat.page}</Table.Td>
-              <Table.Td>{formatDate(stat.startTime, 'dd LLL yyyy, HH:mm:ss')}</Table.Td>
+              <Table.Td>{formatDate(stat.start_time, 'dd LLL yyyy, HH:mm:ss')}</Table.Td>
               <Table.Td>{formatSecondsToHumanReadable(stat.duration, false)}</Table.Td>
-              <Table.Td>{stat.totalPages}</Table.Td>
-              <Table.Td>{devicesById[stat.deviceId ?? '']?.model ?? stat.deviceId}</Table.Td>
+              <Table.Td>{stat.total_pages}</Table.Td>
+              <Table.Td>{devicesById[stat.device_id ?? '']?.model ?? stat.device_id}</Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>

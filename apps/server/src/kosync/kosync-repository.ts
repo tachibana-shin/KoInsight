@@ -3,15 +3,15 @@ import { DB } from '../db';
 import * as schema from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export type ProgressCreate = Omit<Progress, 'id' | 'createdAt' | 'updatedAt'>;
-export type ProgressUpdate = Omit<Progress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+export type ProgressCreate = Omit<Progress, 'id' | 'created_at' | 'updated_at'>;
+export type ProgressUpdate = Omit<Progress, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
 
 export class KosyncRepository {
   static async hasDocument(db: DB, userId: number, document: string): Promise<boolean> {
     const [result] = await db
       .select({ id: schema.progress.id })
       .from(schema.progress)
-      .where(and(eq(schema.progress.userId, userId), eq(schema.progress.document, document)));
+      .where(and(eq(schema.progress.user_id, userId), eq(schema.progress.document, document)));
     return !!result;
   }
 
@@ -30,7 +30,7 @@ export class KosyncRepository {
       .update(schema.progress)
       .set(progress)
       .where(
-        and(eq(schema.progress.userId, userId), eq(schema.progress.document, progress.document))
+        and(eq(schema.progress.user_id, userId), eq(schema.progress.document, progress.document))
       )
       .returning();
 
@@ -47,7 +47,7 @@ export class KosyncRepository {
     if (exists) {
       return this.update(db, userId, progress);
     } else {
-      return this.create(db, { ...progress, userId });
+      return this.create(db, { ...progress, user_id: userId });
     }
   }
 
@@ -59,7 +59,7 @@ export class KosyncRepository {
     const [result] = await db
       .select()
       .from(schema.progress)
-      .where(and(eq(schema.progress.userId, userId), eq(schema.progress.document, document)));
+      .where(and(eq(schema.progress.user_id, userId), eq(schema.progress.document, document)));
 
     return result;
   }
@@ -71,13 +71,13 @@ export class KosyncRepository {
         progress: schema.progress.progress,
         percentage: schema.progress.percentage,
         device: schema.progress.device,
-        device_id: schema.progress.deviceId,
-        created_at: schema.progress.createdAt,
-        updated_at: schema.progress.updatedAt,
+        device_id: schema.progress.device_id,
+        created_at: schema.progress.created_at,
+        updated_at: schema.progress.updated_at,
         username: schema.user.username,
       })
       .from(schema.progress)
-      .innerJoin(schema.user, eq(schema.user.id, schema.progress.userId));
+      .innerJoin(schema.user, eq(schema.user.id, schema.progress.user_id));
 
     return result;
   }

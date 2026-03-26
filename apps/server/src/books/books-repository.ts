@@ -14,7 +14,7 @@ import { BooksService } from './books-service';
 
 export class BooksRepository {
   static async getAll(db: DB): Promise<Book[]> {
-    const result = await db.select().from(schema.book).where(isNull(schema.book.softDeletedAt));
+    const result = await db.select().from(schema.book).where(isNull(schema.book.soft_deleted_at));
     return result;
   }
 
@@ -38,14 +38,14 @@ export class BooksRepository {
   static async softDelete(db: DB, id: number, soft_deleted = true): Promise<void> {
     await db
       .update(schema.book)
-      .set({ softDeletedAt: soft_deleted ? new Date() : null })
+      .set({ soft_deleted_at: soft_deleted ? new Date() : null })
       .where(eq(schema.book.id, id));
   }
 
   static async delete(db: DB, book: Book) {
     await db.transaction(async (tx) => {
-      await tx.delete(schema.bookDevice).where(eq(schema.bookDevice.bookMd5, book.md5));
-      await tx.delete(schema.bookGenre).where(eq(schema.bookGenre.bookMd5, book.md5));
+      await tx.delete(schema.bookDevice).where(eq(schema.bookDevice.book_md5, book.md5));
+      await tx.delete(schema.bookGenre).where(eq(schema.bookGenre.book_md5, book.md5));
       await tx.delete(schema.book).where(eq(schema.book.id, book.id));
     });
   }
@@ -62,7 +62,7 @@ export class BooksRepository {
     const result = await db
       .select()
       .from(schema.bookDevice)
-      .where(eq(schema.bookDevice.bookMd5, md5));
+      .where(eq(schema.bookDevice.book_md5, md5));
     return result;
   }
 
@@ -76,16 +76,16 @@ export class BooksRepository {
         title: schema.book.title,
         authors: schema.book.authors,
         notes: schema.book.notes,
-        lastOpen: schema.book.lastOpen,
+        last_open: schema.book.last_open,
         highlights: schema.book.highlights,
         pages: schema.book.pages,
         series: schema.book.series,
         language: schema.book.language,
-        totalReadTime: schema.book.totalReadTime,
-        totalReadPages: schema.book.totalReadPages,
-        softDeletedAt: schema.book.softDeletedAt,
-        referencePages: schema.book.referencePages,
-        coverUrl: schema.book.coverUrl,
+        total_read_time: schema.book.total_read_time,
+        total_read_pages: schema.book.total_read_pages,
+        soft_deleted_at: schema.book.soft_deleted_at,
+        reference_pages: schema.book.reference_pages,
+        cover_url: schema.book.cover_url,
         genres: sql<string>`(
         SELECT json_agg(json_build_object('id', g.id, 'name', g.name))
         FROM ${schema.bookGenre} bg
@@ -108,7 +108,7 @@ export class BooksRepository {
       )`,
       })
       .from(schema.book)
-      .where(returnDeleted ? sql`true` : isNull(schema.book.softDeletedAt));
+      .where(returnDeleted ? sql`true` : isNull(schema.book.soft_deleted_at));
 
     return Promise.all(
       books.map(async (book): Promise<BookWithData> => {
@@ -161,11 +161,11 @@ export class BooksRepository {
     if (!genre) return;
     await db
       .insert(schema.bookGenre)
-      .values({ bookMd5: md5, genreId: genre.id })
+      .values({ book_md5: md5, genre_id: genre.id })
       .onConflictDoNothing();
   }
 
   static async setReferencePages(db: DB, id: number, referencePages: number | null) {
-    await db.update(schema.book).set({ referencePages }).where(eq(schema.book.id, id));
+    await db.update(schema.book).set({ reference_pages: referencePages }).where(eq(schema.book.id, id));
   }
 }

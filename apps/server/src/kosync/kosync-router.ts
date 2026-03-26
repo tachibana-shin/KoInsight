@@ -74,7 +74,7 @@ kosync.put('/syncs/progress', authenticate, async (c) => {
       progress,
       percentage,
       device,
-      deviceId: device_id,
+      device_id,
     });
     return c.json(insertedProgress);
   } catch (error) {

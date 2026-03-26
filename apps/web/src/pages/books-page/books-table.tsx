@@ -41,7 +41,7 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
                   component={NavLink}
                   className={style.BookCoverLink}
                 >
-                  {book.softDeletedAt ? (
+                  {book.soft_deleted_at ? (
                     <Tooltip label={t('book.hidden')} withArrow>
                       <IconEyeClosed size={13} className={style.BookHiddenIndicator} />
                     </Tooltip>
@@ -54,7 +54,7 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
                     alt={book.title ?? undefined}
                     fallbackSrc="/book-placeholder-small.png"
                     radius="sm"
-                    className={book.softDeletedAt ? style.BookHidden : undefined}
+                    className={book.soft_deleted_at ? style.BookHidden : undefined}
                   />
                 </Anchor>
                 <Stack gap={2} justify="center">

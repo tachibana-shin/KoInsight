@@ -26,9 +26,9 @@ books.get('/', async (c) => {
  */
 books.get('/:bookId', getBookById, async (c) => {
   const book = c.get('book')!;
-  const includeDeleted = c.req.query('includeDeleted') === 'true';
+  // const includeDeleted = c.req.query('includeDeleted') === 'true';
   const db = c.get('db');
-  const bookWithData = await BooksService.withData(db, book, includeDeleted);
+  const bookWithData = await BooksService.withData(db, book);
   return c.json(bookWithData);
 });
 

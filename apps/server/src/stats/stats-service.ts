@@ -12,12 +12,12 @@ export class StatsService {
   static getPerMonthReadingTime(stats: PageStat[]): PerMonthReadingTime[] {
     const perMonth = (stats ?? [])
       .reduce<PerMonthReadingTime[]>((acc, stat) => {
-        const month = format(stat.startTime, 'MMMM yyyy');
+        const month = format(stat.start_time, 'MMMM yyyy');
         const monthData = acc.find((item) => item.month === month);
         if (monthData) {
           monthData.duration += stat.duration;
         } else {
-          acc.push({ month, duration: stat.duration, date: stat.startTime });
+          acc.push({ month, duration: stat.duration, date: stat.start_time });
         }
 
         return acc;
@@ -30,7 +30,7 @@ export class StatsService {
   static perDayOfTheWeek(stats: PageStat[]): PerDayOfTheWeek[] {
     return stats
       .reduce((acc, stat) => {
-        const day = format(stat.startTime, 'EEEE');
+        const day = format(stat.start_time, 'EEEE');
         const existingDay = acc.find((d) => d.name === day);
         if (existingDay) {
           existingDay.value += stat.duration;
@@ -38,7 +38,7 @@ export class StatsService {
           acc.push({
             name: day,
             value: stat.duration,
-            day: new Date(stat.startTime).getUTCDay(),
+            day: new Date(stat.start_time).getUTCDay(),
           });
         }
         return acc;
@@ -57,7 +57,7 @@ export class StatsService {
 
   static longestDay(stats: PageStat[]) {
     const timePerDay = stats.reduce<Record<number, number>>((acc, stat) => {
-      const day = startOfDay(stat.startTime).getTime();
+      const day = startOfDay(stat.start_time).getTime();
       acc[day] = (acc[day] || 0) + stat.duration;
       return acc;
     }, {});
@@ -68,7 +68,7 @@ export class StatsService {
 
   static last7DaysReadTime(stats: PageStat[]) {
     const sevenDaysAgo = subDays(new Date(), 7);
-    const lastSevenDays = stats.filter((stat) => stat.startTime > sevenDaysAgo.getTime());
+    const lastSevenDays = stats.filter((stat) => stat.start_time > sevenDaysAgo.getTime());
     return sum(lastSevenDays.map((s) => s.duration));
   }
 
@@ -86,14 +86,14 @@ export class StatsService {
     );
 
     const statsPerDay = groupBy((stat: PageStat) =>
-      startOfDay(stat.startTime).getTime().toString()
+      startOfDay(stat.start_time).getTime().toString()
     )(stats);
 
     const pagesPerDay = Object.values(statsPerDay).map(
       (dayStats) =>
         dayStats?.reduce((acc, stat) => {
-          if (stat.totalPages && booksByMd5[stat.bookMd5]?.referencePages) {
-            return acc + (1 / stat.totalPages) * booksByMd5[stat.bookMd5].referencePages!;
+          if (stat.total_pages && booksByMd5[stat.book_md5]?.reference_pages) {
+            return acc + (1 / stat.total_pages) * booksByMd5[stat.book_md5].reference_pages!;
           } else {
             return acc + 1;
           }
