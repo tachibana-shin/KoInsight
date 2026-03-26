@@ -4,9 +4,12 @@ import { AppContext } from '../types';
 
 export async function authMiddleware(c: Context<AppContext>, next: Next) {
   const dashboardPassword = c.env.DASHBOARD_PASSWORD;
+  const path = c.req.path; 
 
+  const isCoverApi = /^\/api\/books\/[^/]+\/cover$/.test(path);
+  
   // Auth is disabled if DASHBOARD_PASSWORD is not set
-  if (!dashboardPassword) {
+  if (isCoverApi || !dashboardPassword) {
     return next();
   }
 

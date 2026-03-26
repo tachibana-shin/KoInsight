@@ -20,8 +20,8 @@ export async function fetchFromAPI<T>(
   }
 
   const token = localStorage.getItem(TOKEN_KEY);
-  const headers: Record<string, string> = {
-    'Content-Type': body instanceof FormData ? 'multipart/form-data' : 'application/json',
+  const headers: Record<string, string> = body instanceof FormData ? {} : {
+    'Content-Type': 'application/json',
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
