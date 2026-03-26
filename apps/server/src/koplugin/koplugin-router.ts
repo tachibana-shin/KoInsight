@@ -2,31 +2,31 @@ import { KoReaderAnnotation } from '@koinsight/common/types/annotation';
 import { KoReaderBook } from '@koinsight/common/types/book';
 import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
-import JSZip from 'jszip';
-import fs from 'node:fs/promises';
-import { Hono, Context, Next } from 'hono';
-import path from 'node:path';
-import { stream } from 'hono/streaming';
+// import JSZip from 'jszip';
+// import fs from 'node:fs/promises';
+import { Context, Hono, Next } from 'hono';
+// import path from 'node:path';
+// import { stream } from 'hono/streaming';
 import { DeviceRepository } from '../devices/device-repository';
-import { UploadService } from '../upload/upload-service';
 import { AppContext, Variables as AppVariables } from '../types';
+import { UploadService } from '../upload/upload-service';
 
-async function addDirectoryToZip(zip: JSZip, directoryPath: string, rootPath: string) {
-  const files = await fs.readdir(directoryPath, { withFileTypes: true });
+// async function addDirectoryToZip(zip: JSZip, directoryPath: string, rootPath: string) {
+//   const files = await fs.readdir(directoryPath, { withFileTypes: true });
 
-  for (const file of files) {
-    const fullPath = path.join(directoryPath, file.name);
-    const relativePath = path.relative(rootPath, fullPath);
+//   for (const file of files) {
+//     const fullPath = path.join(directoryPath, file.name);
+//     const relativePath = path.relative(rootPath, fullPath);
 
-    if (file.isDirectory()) {
-      zip.folder(relativePath);
-      await addDirectoryToZip(zip, fullPath, rootPath);
-    } else {
-      const content = await fs.readFile(fullPath);
-      zip.file(relativePath, content);
-    }
-  }
-}
+//     if (file.isDirectory()) {
+//       zip.folder(relativePath);
+//       await addDirectoryToZip(zip, fullPath, rootPath);
+//     } else {
+//       const content = await fs.readFile(fullPath);
+//       zip.file(relativePath, content);
+//     }
+//   }
+// }
 
 type Variables = AppVariables & {
   body: any;
@@ -95,20 +95,20 @@ koplugin.get('/health', rejectOldPluginVersion, async (c) => {
   return c.json({ message: 'Plugin is healthy' });
 });
 
-koplugin.get('/download', async (c) => {
-  const folderPath = path.join(import.meta.dirname ?? '', '../../../../', 'plugins');
+// koplugin.get('/download', async (c) => {
+//   const folderPath = path.join(import.meta.dirname ?? '', '../../../../', 'plugins');
 
-  const zip = new JSZip();
-  await addDirectoryToZip(zip, folderPath, folderPath);
+//   const zip = new JSZip();
+//   await addDirectoryToZip(zip, folderPath, folderPath);
 
-  const zipContent = await zip.generateAsync({ type: 'uint8array' });
+//   const zipContent = await zip.generateAsync({ type: 'uint8array' });
 
-  c.header('Content-Type', 'application/zip');
-  c.header('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
+//   c.header('Content-Type', 'application/zip');
+//   c.header('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
 
-  return stream(c, async (stream) => {
-    await stream.write(zipContent);
-  });
-});
+//   return stream(c, async (stream) => {
+//     await stream.write(zipContent);
+//   });
+// });
 
 export { koplugin as kopluginRouter };

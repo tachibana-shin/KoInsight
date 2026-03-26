@@ -7,7 +7,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build && (cd ../../plugins && zip -r ../apps/web/dist/koinsight-plugin.zip koinsight.koplugin)"
   },
   "dependencies": {
     "@koinsight/common": "*",
