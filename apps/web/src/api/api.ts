@@ -27,7 +27,7 @@ export async function fetchFromAPI<T>(
 
   const response = await fetch(`${API_URL}/${endpoint}${searchParams}`, {
     method,
-    body: method !== 'GET' && body ? JSON.stringify(body) : null,
+    body: method !== 'GET' && body ? body instanceof FormData ? body : JSON.stringify(body) : null,
     headers,
   });
 
