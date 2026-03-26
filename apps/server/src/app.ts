@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { authMiddleware } from './auth/auth-middleware';
 import { authRouter } from './auth/auth-router';
-import { openAiRouter } from './ai/open-ai-router';
+import { aiRouter } from './ai/ai-router';
 import { booksRouter } from './books/books-router';
 import { coversRouter } from './books/covers/covers-router';
 import { devicesRouter } from './devices/devices-router';
@@ -50,6 +50,6 @@ app.route('/api/books/:bookId/cover', coversRouter);
 app.route('/api/stats', statsRouter);
 app.route('/api/upload', uploadRouter);
 app.route('/api/open-library', openLibraryRouter);
-app.route('/api/ai', openAiRouter);
+app.route('/api/ai', aiRouter);
 
 export default app;

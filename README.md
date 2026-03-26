@@ -86,6 +86,13 @@ The following environment variables are required for a successful deployment:
 - `DATABASE_URL`: **Required.** Connection string for your database (e.g., PostgreSQL).
 - `DATA_PATH`: Local path for SQLite data (if not using a remote DB).
 
+### AI Integration (Optional)
+Used for fetching book genres and summaries automatically. If both are provided, Gemini is prioritized.
+- `GEMINI_API_KEY`: API key for Google Gemini (Recommended, has a generous free tier).
+- `OPENAI_API_KEY`: API key for OpenAI.
+- `OPENAI_PROJECT_ID`: *(Optional)* OpenAI Project ID.
+- `OPENAI_ORG_ID`: *(Optional)* OpenAI Organization ID.
+
 ### Third-party Integrations
 - `IMGBB_API_KEY`: API key for ImgBB cover storage (Get it from [api.imgbb.com](https://api.imgbb.com/)).
 - `IMGUR_CLIENT_ID`: Client ID for Imgur cover storage (Register an app at [api.imgur.com](https://api.imgur.com/oauth2/addclient)).
