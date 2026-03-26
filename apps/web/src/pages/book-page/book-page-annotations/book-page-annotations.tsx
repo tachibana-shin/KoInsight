@@ -1,6 +1,7 @@
 import { Annotation, AnnotationType, BookWithData } from '@koinsight/common/types';
 import { Accordion, Box, Divider, Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnnotationCard } from './annotation-card';
 import { AnnotationFiltersComponent } from './annotation-filters';
 import { useAnnotationFilters } from './use-annotation-filters';
@@ -10,6 +11,7 @@ type BookPageAnnotationsProps = {
 };
 
 export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
+  const { t } = useTranslation();
   const { searchTerm, types, showDeleted, sortBy, groupBy } = useAnnotationFilters();
 
   const filteredAndSortedAnnotations = useMemo(() => {
@@ -66,7 +68,7 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
       if (groupBy === 'type') {
         key = annotation.annotationType;
       } else if (groupBy === 'chapter') {
-        key = annotation.chapter || 'Unknown chapter';
+        key = annotation.chapter || t('annotations.unknownChapter');
       }
 
       if (!groups[key]) {
@@ -76,18 +78,20 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
     });
 
     return groups;
-  }, [filteredAndSortedAnnotations, groupBy]);
+  }, [filteredAndSortedAnnotations, groupBy, t]);
 
   return (
     <Stack gap="lg">
       <Box>
         <Title order={3} mb="xs">
-          Annotations ({filteredAndSortedAnnotations.length} of {book.annotations.length})
+          {t('annotations.title')} ({filteredAndSortedAnnotations.length} {t('annotations.of')}{' '}
+          {book.annotations.length})
         </Title>
         <Text size="sm" c="dimmed">
-          {book.highlightsCount} highlights · {book.notesCount} notes · {book.bookmarksCount}{' '}
-          bookmarks
-          {book.deletedCount > 0 && ` · ${book.deletedCount} deleted`}
+          {t('annotations.highlights', { count: book.highlightsCount })} ·{' '}
+          {t('annotations.notes', { count: book.notesCount })} ·{' '}
+          {t('annotations.bookmarks', { count: book.bookmarksCount })}
+          {book.deletedCount > 0 && ` · ${t('annotations.deleted', { count: book.deletedCount })}`}
         </Text>
       </Box>
 
@@ -97,7 +101,7 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
 
       {filteredAndSortedAnnotations.length === 0 ? (
         <Text c="dimmed" ta="center" py="xl">
-          No annotations found with the current filters.
+          {t('annotations.noAnnotations')}
         </Text>
       ) : groupBy === 'none' ? (
         <AnnotationsList annotations={filteredAndSortedAnnotations} />

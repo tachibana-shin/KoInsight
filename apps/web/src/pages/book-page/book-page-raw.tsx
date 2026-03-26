@@ -4,6 +4,7 @@ import { DateInput } from '@mantine/dates';
 import { endOfDay, formatDate, startOfDay } from 'date-fns';
 import { apply } from 'ramda';
 import { JSX, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDevices } from '../../api/devices';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 
@@ -12,6 +13,7 @@ type BookPageRawProps = {
 };
 
 export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
+  const { t } = useTranslation();
   const { data: devices } = useDevices();
 
   const devicesById = useMemo(
@@ -47,21 +49,21 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
     <Flex direction="column" gap={20}>
       <Flex gap={8}>
         <NumberInput
-          label="Page Number"
+          label={t('book.pageNumber')}
           value={page ?? 0}
           onChange={(e) => setPage(Number(e))}
           max={maxPage}
           step={1}
         />
         <DateInput
-          label="Start date"
+          label={t('book.startDate')}
           value={startDate}
           onChange={(e) => setStartDate(startOfDay(e!))}
           minDate={min}
           maxDate={endDate}
         />
         <DateInput
-          label="End date"
+          label={t('book.endDate')}
           value={endDate}
           onChange={(e) => setEndDate(endOfDay(e!))}
           minDate={startDate}
@@ -71,11 +73,11 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
       <Table stickyHeader>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>Page</Table.Th>
-            <Table.Th>Start time</Table.Th>
-            <Table.Th>Duration</Table.Th>
-            <Table.Th>Total pages</Table.Th>
-            <Table.Th>Device</Table.Th>
+            <Table.Th>{t('common.page')}</Table.Th>
+            <Table.Th>{t('common.startTime')}</Table.Th>
+            <Table.Th>{t('common.duration')}</Table.Th>
+            <Table.Th>{t('common.totalPages')}</Table.Th>
+            <Table.Th>{t('common.device')}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>

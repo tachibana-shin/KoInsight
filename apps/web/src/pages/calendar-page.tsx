@@ -5,6 +5,7 @@ import { IconClock } from '@tabler/icons-react';
 import { startOfDay } from 'date-fns/startOfDay';
 import { sum, uniq } from 'ramda';
 import { JSX, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { useBooks } from '../api/books';
 import { usePageStats } from '../api/use-page-stats';
@@ -17,6 +18,7 @@ type DayData = {
 };
 
 export function CalendarPage(): JSX.Element {
+  const { t } = useTranslation();
   const { data: books, isLoading } = useBooks();
   const {
     data: { stats: events },
@@ -89,7 +91,7 @@ export function CalendarPage(): JSX.Element {
 
   return (
     <>
-      <Title mb="xl">Calendar</Title>
+      <Title mb="xl">{t('calendar.title')}</Title>
       <Calendar<DayData>
         events={calendarEvents}
         dayRenderer={(data) => getBookNames(data).map((el) => <div>{el}</div>)}

@@ -83,6 +83,16 @@ const vi: Translation = {
     rawValues: 'Dữ liệu thô',
     advanced: 'Nâng cao',
     reloadBookData: 'Tải lại dữ liệu sách',
+    pageNumber: 'Số trang',
+    startDate: 'Ngày bắt đầu',
+    endDate: 'Ngày kết thúc',
+    changeCover: 'Đổi ảnh bìa',
+    changeBookCover: 'Đổi ảnh bìa sách',
+    selectCover: 'Chọn ảnh bìa',
+    uploadCover: 'Tải lên ảnh bìa',
+    importedAnnotations: '{{count}} chú thích đã nhập',
+    percentageRead: 'Phần trăm đã đọc',
+    hidden: 'Sách này đang bị ẩn',
   },
 
   // Annotations
@@ -175,11 +185,13 @@ const vi: Translation = {
     noSyncs: 'Chưa có đồng bộ tiến độ',
     noSyncsDescription: 'Có vẻ như chưa ai đồng bộ tiến độ của họ.',
     deviceIdTooltip: 'ID thiết bị: {{id}}',
+    deviceId: 'ID thiết bị',
     username: 'Tên người dùng',
     document: 'Tài liệu',
     progress: 'Tiến độ',
     percentage: 'Phần trăm',
     md5Tooltip: 'MD5: {{md5}}',
+    md5: 'MD5',
   },
 
   // Empty state
@@ -190,6 +202,24 @@ const vi: Translation = {
   // Common
   common: {
     pageNotFound: 'Không tìm thấy trang',
+    loading: 'Đang tải...',
+    none: 'N/A',
+    unknownAuthor: 'Tác giả không xác định',
+    page: 'Trang',
+    startTime: 'Thời điểm bắt đầu',
+    duration: 'Thời lượng',
+    totalPages: 'Tổng số trang',
+    device: 'Thiết bị',
+    lastOpened: 'Mở lần cuối',
+    author: 'Tác giả',
+    series: 'Bộ sách',
+    highlights: 'Đánh dấu',
+    notes: 'Ghi chú',
+    read: 'Đã đọc',
+    pages: 'Trang',
+    title: 'Tiêu đề',
+    md5: 'MD5',
+    lessThanAMinute: 'Ít hơn một phút',
   },
 };
 

@@ -2,6 +2,7 @@ import { Book } from '@koinsight/common/types';
 import { Button, Flex, NumberInput, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { updateBookReferencePages } from '../../../api/books';
 
 export type BookReferencePagesProps = {
@@ -9,6 +10,7 @@ export type BookReferencePagesProps = {
 };
 
 export function BookReferencePages({ book }: BookReferencePagesProps) {
+  const { t } = useTranslation();
   const [referencePages, setReferencePages] = useState(book.referencePages ?? 0);
 
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -18,15 +20,15 @@ export function BookReferencePages({ book }: BookReferencePagesProps) {
       setUpdateLoading(true);
       await updateBookReferencePages(book.id, referencePages);
       notifications.show({
-        title: 'Reference page count updated',
-        message: `${book ? `"${book?.title}"` : 'Book'} reference page count updated successfully.`,
+        title: t('manage.updateRefPagesSuccess'),
+        message: t('manage.updateRefPagesSuccessMessage', { title: book?.title ?? 'Book' }),
         color: 'green',
         position: 'top-center',
       });
     } catch (error) {
       console.warn(error)
       notifications.show({
-        title: 'Failed to update reference page count',
+        title: t('manage.updateRefPagesFailed'),
         message: '',
         color: 'red',
         position: 'top-center',
@@ -39,17 +41,21 @@ export function BookReferencePages({ book }: BookReferencePagesProps) {
   return (
     <div>
       <Title order={3} mb="md">
-        Reference page count
+        {t('manage.referencePageTitle')}
       </Title>
       <Text size="sm" mb="md" maw="80%" lh="xl">
-        KOReader tracks your reading progress based on <em>pages in the app</em>, which can vary
-        depending on settings like font size, margins, and layout. For example, a 100-page book
-        might show up as 150 pages in KOReader if you increase the font size.
+        <Trans i18nKey="manage.referencePageDescription">
+          KOReader tracks your reading progress based on <em>pages in the app</em>, which can vary
+          depending on settings like font size, margins, and layout. For example, a 100-page book
+          might show up as 150 pages in KOReader if you increase the font size.
+        </Trans>
         <br />
         <br />
-        To get accurate reading stats, you can set the <strong>reference page</strong> count — the
-        actual number of pages in the physical or original version of the book. KoInsight will then
-        adjust your stats to match that real-world page count.
+        <Trans i18nKey="manage.referencePageDescription2">
+          To get accurate reading stats, you can set the <strong>reference page</strong> count — the
+          actual number of pages in the physical or original version of the book. KoInsight will then
+          adjust your stats to match that real-world page count.
+        </Trans>
       </Text>
       <Flex gap="md">
         <NumberInput
@@ -58,7 +64,7 @@ export function BookReferencePages({ book }: BookReferencePagesProps) {
           onChange={(e) => setReferencePages(Number(e))}
         />
         <Button variant="subtle" loading={updateLoading} onClick={onUpdateReferencePages}>
-          Update reference pages
+          {t('manage.updateRefPages')}
         </Button>
       </Flex>
     </div>

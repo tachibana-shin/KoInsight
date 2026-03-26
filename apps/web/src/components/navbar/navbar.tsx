@@ -112,8 +112,13 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
               >
                 🇻🇳 Tiếng Việt
               </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+              <Menu.Item
+                onClick={() => i18n.changeLanguage('ja')}
+                fw={i18n.language === 'ja' ? 700 : 400}
+              >
+                🇯🇵 日本語
+              </Menu.Item>
+            </Menu.Dropdown>          </Menu>
           <ActionIcon
             onClick={toggleColorScheme}
             variant="default"

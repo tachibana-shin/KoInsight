@@ -81,6 +81,16 @@ const en = {
     rawValues: 'Raw Values',
     advanced: 'Advanced',
     reloadBookData: 'Reload book data',
+    pageNumber: 'Page Number',
+    startDate: 'Start date',
+    endDate: 'End date',
+    changeCover: 'Change cover',
+    changeBookCover: 'Change book cover',
+    selectCover: 'Select Cover',
+    uploadCover: 'Upload Cover',
+    importedAnnotations: '{{count}} imported annotations',
+    percentageRead: 'Percentage read',
+    hidden: 'This book is hidden',
   },
 
   // Annotations
@@ -172,13 +182,15 @@ const en = {
     title: 'Progress syncs',
     loading: 'Loading...',
     noSyncs: 'No progress syncs',
-    noSyncsDescription: "It seems like no one has synced their progress yet.",
+    noSyncsDescription: 'It seems like no one has synced their progress yet.',
     deviceIdTooltip: 'Device ID: {{id}}',
+    deviceId: 'Device ID',
     username: 'Username',
     document: 'Document',
     progress: 'Progress',
     percentage: 'Percentage',
     md5Tooltip: 'MD5: {{md5}}',
+    md5: 'MD5',
   },
 
   // Empty state
@@ -189,6 +201,24 @@ const en = {
   // Common
   common: {
     pageNotFound: 'Page not found',
+    loading: 'Loading...',
+    none: 'N/A',
+    unknownAuthor: 'Unknown author',
+    page: 'Page',
+    startTime: 'Start time',
+    duration: 'Duration',
+    totalPages: 'Total pages',
+    device: 'Device',
+    lastOpened: 'Last opened',
+    author: 'Author',
+    series: 'Series',
+    highlights: 'Highlights',
+    notes: 'Notes',
+    read: 'Read',
+    pages: 'Pages',
+    title: 'Title',
+    md5: 'MD5',
+    lessThanAMinute: 'Less than a minute',
   },
 };
 

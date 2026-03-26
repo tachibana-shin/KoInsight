@@ -1,9 +1,11 @@
 import { Checkbox, Flex, Group, Select, Stack, TextInput, Tooltip } from '@mantine/core';
 import { IconArrowsDownUp, IconCategory, IconSearch } from '@tabler/icons-react';
 import { JSX } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GroupBy, SortBy, useAnnotationFilters } from './use-annotation-filters';
 
 export function AnnotationFiltersComponent(): JSX.Element {
+  const { t } = useTranslation();
   const {
     types,
     toggleType,
@@ -21,7 +23,7 @@ export function AnnotationFiltersComponent(): JSX.Element {
     <Stack gap="md">
       <Flex align="center" gap="md">
         <TextInput
-          placeholder="Search annotations..."
+          placeholder={t('annotations.searchPlaceholder')}
           leftSection={<IconSearch size={16} />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.currentTarget.value)}
@@ -30,22 +32,22 @@ export function AnnotationFiltersComponent(): JSX.Element {
 
         <Group gap="md" ml="auto">
           <Checkbox
-            label="Highlights"
+            label={t('annotations.highlights_label')}
             checked={types.includes('highlight')}
             onChange={() => toggleType('highlight')}
           />
           <Checkbox
-            label="Notes"
+            label={t('annotations.notes_label')}
             checked={types.includes('note')}
             onChange={() => toggleType('note')}
           />
           <Checkbox
-            label="Bookmarks"
+            label={t('annotations.bookmarks_label')}
             checked={types.includes('bookmark')}
             onChange={() => toggleType('bookmark')}
           />
           <Checkbox
-            label="Show deleted"
+            label={t('annotations.showDeleted')}
             checked={showDeleted}
             onChange={(e) => setShowDeleted(e.currentTarget.checked)}
           />
@@ -53,30 +55,30 @@ export function AnnotationFiltersComponent(): JSX.Element {
       </Flex>
 
       <Group gap="md">
-        <Tooltip label="Sort by" openDelay={1000} position="top" withArrow>
+        <Tooltip label={t('annotations.sortBy')} openDelay={1000} position="top" withArrow>
           <Select
             leftSection={<IconArrowsDownUp size={16} />}
             value={sortBy}
             onChange={(value) => setSortBy(value as SortBy)}
             data={[
-              { value: 'newest', label: 'Newest first' },
-              { value: 'oldest', label: 'Oldest first' },
-              { value: 'page-asc', label: 'Page (ascending)' },
-              { value: 'page-desc', label: 'Page (descending)' },
+              { value: 'newest', label: t('annotations.sortNewest') },
+              { value: 'oldest', label: t('annotations.sortOldest') },
+              { value: 'page-asc', label: t('annotations.sortPageAsc') },
+              { value: 'page-desc', label: t('annotations.sortPageDesc') },
             ]}
             style={{ width: 200 }}
           />
         </Tooltip>
 
-        <Tooltip label="Group by" openDelay={1000} position="top" withArrow>
+        <Tooltip label={t('annotations.groupBy')} openDelay={1000} position="top" withArrow>
           <Select
             leftSection={<IconCategory size={16} />}
             value={groupBy}
             onChange={(value) => setGroupBy(value as GroupBy)}
             data={[
-              { value: 'none', label: 'No grouping' },
-              { value: 'type', label: 'By type' },
-              { value: 'chapter', label: 'By chapter' },
+              { value: 'none', label: t('annotations.groupNone') },
+              { value: 'type', label: t('annotations.groupType') },
+              { value: 'chapter', label: t('annotations.groupChapter') },
             ]}
             style={{ width: 200 }}
           />
