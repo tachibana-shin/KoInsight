@@ -1,6 +1,6 @@
 import { Book, BookWithData } from '@koinsight/common/types';
 import useSWR from 'swr';
-import { API_URL, fetchFromAPI } from './api';
+import { fetchFromAPI } from './api';
 
 export function useBooks({ showHidden } = { showHidden: false }) {
   return useSWR(
@@ -31,9 +31,5 @@ export async function updateBookReferencePages(id: Book['id'], referencePages: n
 }
 
 export function uploadBookCover(bookId: Book['id'], formData: FormData) {
-  return fetch(`${API_URL}/books/${bookId}/cover`, {
-    method: 'POST',
-    body: formData,
-    headers: { Accept: 'multipart/form-data' },
-  });
+  return fetchFromAPI(`books/${bookId}/cover`, 'POST', formData);
 }

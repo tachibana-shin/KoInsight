@@ -6,7 +6,7 @@ const TOKEN_KEY = 'koinsight_auth_token';
 export async function fetchFromAPI<T>(
   endpoint: string,
   method: string = 'GET',
-  body: Record<string, unknown> | null = null
+  body: Record<string, unknown> | FormData | null = null
 ) {
   let searchParams: string = '';
 
