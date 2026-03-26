@@ -42,7 +42,7 @@ export function BookUploadCover({ book, showTitle = true, onChange }: BookUpload
       formData.append('file', file);
       const response = await uploadBookCover(book.id, formData);
 
-      if (response.ok) {
+      if (response.message) {
         await onSuccess();
       } else {
         setMessage('Failed to upload file.');

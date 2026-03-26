@@ -31,5 +31,5 @@ export async function updateBookReferencePages(id: Book['id'], referencePages: n
 }
 
 export function uploadBookCover(bookId: Book['id'], formData: FormData) {
-  return fetchFromAPI(`books/${bookId}/cover`, 'POST', formData);
+  return fetchFromAPI<{ message: string }>(`books/${bookId}/cover`, 'POST', formData);
 }
