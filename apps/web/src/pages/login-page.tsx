@@ -47,7 +47,7 @@ export function LoginPage() {
 
       const { token } = await res.json();
       login(token);
-      navigate(from, { replace: true });
+      void navigate(from, { replace: true });
     } catch {
       setError(t('login.cannotConnect'));
     } finally {

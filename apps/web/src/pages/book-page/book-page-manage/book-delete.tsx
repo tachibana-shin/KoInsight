@@ -42,7 +42,7 @@ export function BookDelete({ book }: BookDeleteProps) {
       setDeleteLoading(true);
       await deleteBook(book.id);
       await mutate('books');
-      navigate(RoutePath.HOME);
+      void navigate(RoutePath.HOME);
       notifications.show({
         title: t('manage.deleteSuccess'),
         message: t('manage.deleteSuccessMessage', { title: book?.title ?? 'Book' }),

@@ -32,7 +32,7 @@ export function BookHide({ book }: BookHideProps) {
       await mutate(`books/${book.id}`);
 
       if (hidden) {
-        navigate(RoutePath.HOME);
+        void navigate(RoutePath.HOME);
       }
 
       notifications.show({

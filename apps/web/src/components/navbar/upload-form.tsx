@@ -45,7 +45,7 @@ export function UploadForm(): JSX.Element {
         setMessage(t('upload.failed'));
       }
     } catch (error) {
-      setMessage(`Error: ${error}`);
+      setMessage(`Error: ${error + ''}`);
     }
   };
 

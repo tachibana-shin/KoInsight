@@ -48,7 +48,7 @@ export function BookUploadCover({ book, showTitle = true, onChange }: BookUpload
         setMessage('Failed to upload file.');
       }
     } catch (error) {
-      setMessage(`Error: ${error}`);
+      setMessage(`Error: ${error + ''}`);
     }
   };
 

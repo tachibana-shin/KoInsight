@@ -5,7 +5,7 @@ import en from './locales/en';
 import vi from './locales/vi';
 import ja from './locales/ja';
 
-i18n
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

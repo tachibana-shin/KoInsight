@@ -27,7 +27,7 @@ export class StatsRepository {
       .innerJoin(schema.book, eq(schema.pageStat.book_md5, schema.book.md5))
       .where(isNull(schema.book.soft_deleted_at));
 
-    return stats.map(this.updateStartTime);
+    return stats.map(e => this.updateStartTime(e));
   }
 
   static async getByBookMD5(db: DB, book_md5: string): Promise<PageStat[]> {
@@ -35,7 +35,7 @@ export class StatsRepository {
       .select()
       .from(schema.pageStat)
       .where(eq(schema.pageStat.book_md5, book_md5));
-    return stats.map(this.updateStartTime);
+    return stats.map(e => this.updateStartTime(e));
   }
 
   static async insert(db: DB, data: PageStat): Promise<void> {
