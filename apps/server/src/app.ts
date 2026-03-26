@@ -2,6 +2,8 @@ import './config';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { authMiddleware } from './auth/auth-middleware';
+import { authRouter } from './auth/auth-router';
 import { openAiRouter } from './ai/open-ai-router';
 import { booksRouter } from './books/books-router';
 import { coversRouter } from './books/covers/covers-router';
@@ -30,7 +32,13 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// KoSync API (mounted at root to maintain compatibility)
+// Auth routes (public - no auth middleware)
+app.route('/api/auth', authRouter);
+
+// Protect all /api/* routes with auth middleware (JWT check)
+app.use('/api/*', authMiddleware);
+
+// KoSync API (mounted at root to maintain compatibility) - not protected
 app.route('/', kosyncRouter);
 
 // API routes

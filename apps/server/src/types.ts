@@ -4,6 +4,8 @@ import { User } from '@koinsight/common/types/user';
 
 export type Bindings = {
   DATABASE_URL: string;
+  DASHBOARD_PASSWORD?: string;
+  JWT_SECRET?: string;
 };
 
 export type Variables = {

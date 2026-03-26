@@ -78,6 +78,10 @@ The following environment variables are required for a successful deployment:
 - `NODE_ENV`: Set to `production` or `development`.
 - `MAX_FILE_SIZE_MB`: Max upload size for `.sqlite` files (default: `100`).
 
+### Authentication
+- `DASHBOARD_PASSWORD`: *(Optional)* Set a password to protect the web dashboard. If not set, the app is publicly accessible.
+- `JWT_SECRET`: *(Recommended)* A secret string used to sign JWT tokens. Defaults to a built-in value if not set — **set this in production**.
+
 ### Database
 - `DATABASE_URL`: **Required.** Connection string for your database (e.g., PostgreSQL).
 - `DATA_PATH`: Local path for SQLite data (if not using a remote DB).

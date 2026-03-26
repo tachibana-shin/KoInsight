@@ -1,4 +1,4 @@
-name = "koinsight-server"
+name = "koinsight"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 main = "apps/server/src/index.cloudflare.ts"
