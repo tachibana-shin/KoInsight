@@ -30,7 +30,7 @@ export function useAnnotationFilters() {
   const toggleType = useCallback(
     (type: AnnotationType) => {
       const newTypes = types.includes(type) ? types.filter((t) => t !== type) : [...types, type];
-      setTypes(newTypes);
+      void setTypes(newTypes);
     },
     [types, setTypes]
   );

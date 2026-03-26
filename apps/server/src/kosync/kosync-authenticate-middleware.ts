@@ -1,35 +1,29 @@
-import { NextFunction, Request, Response } from 'express';
+import { Context, Next } from 'hono';
+import { AppContext } from '../types';
 import { UserRepository } from './user-repository';
-import { User } from '@koinsight/common/types/user';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
-}
-
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  const username = req.header('x-auth-user');
-  const key = req.header('x-auth-key');
+export const authenticate = async (c: Context<AppContext>, next: Next) => {
+  // Use any for context because Hono middleware type is tricky with generics
+  // But we can still get 'db' from it.
+  const username = c.req.header('x-auth-user');
+  const key = c.req.header('x-auth-key');
 
   if (!username || !key) {
-    res.status(401).json({ error: 'Missing authentication headers' });
-    return;
+    return c.json({ error: 'Missing authentication headers' }, 401);
   }
 
+  const db = c.get('db');
   try {
-    const user = await UserRepository.login(username, key);
+    const user = await UserRepository.login(db, username, key);
 
     if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
+      return c.json({ error: 'Unauthorized' }, 401);
     } else {
-      req.user = user;
-      next();
+      c.set('user', user);
+      await next();
     }
   } catch (err) {
     console.error('Auth middleware error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    return c.json({ error: 'Internal server error' }, 500);
   }
 };

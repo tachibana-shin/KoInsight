@@ -2,10 +2,7 @@
   "version": "1",
   "name": "KoInsight",
   "type": "collection",
-  "ignore": [
-    "node_modules",
-    ".git"
-  ],
+  "ignore": ["node_modules", ".git"],
   "size": 0.0003681182861328125,
   "filesCount": 3,
   "presets": {

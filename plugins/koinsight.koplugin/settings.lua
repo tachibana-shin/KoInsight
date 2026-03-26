@@ -17,6 +17,7 @@ KoInsightSettings.__index = KoInsightSettings
 local SETTING_KEY = "koinsight"
 local DEFAULTS = {
   server_url = "",
+  api_password = "",
   sync_on_suspend = true,
   aggressive_suspend_sync = false,
   suspend_connect_timeout_s = 10, -- clamped to [3, 60]
@@ -101,6 +102,14 @@ end
 function KoInsightSettings:setServerURL(url)
   url = tostring(url or ""):gsub("/*$", "")
   self:update({ server_url = url })
+end
+
+function KoInsightSettings:getApiPassword()
+  return self.data.api_password or DEFAULTS.api_password
+end
+function KoInsightSettings:setApiPassword(password)
+  password = tostring(password or "")
+  self:update({ api_password = password })
 end
 
 function KoInsightSettings:getSyncOnSuspendEnabled()
@@ -197,6 +206,12 @@ function KoInsightSettings:editServerSettings()
         description = _("Server URL:"),
         hint = _("http://example.com:port"),
       },
+      {
+        text = self.data.api_password,
+        description = _("API Password:"),
+        hint = _("Password for authentication"),
+        is_password = true,
+      },
     },
     buttons = {
       {
@@ -220,6 +235,9 @@ function KoInsightSettings:editServerSettings()
           callback = function()
             local myfields = self.settings_dialog:getFields()
             self:setServerURL(myfields[1])
+            if myfields[2] ~= nil then
+              self:setApiPassword(myfields[2])
+            end
             UIManager:close(self.settings_dialog)
             UIManager:show(InfoMessage:new({ text = _("KoInsight settings saved."), timeout = 2 }))
           end,

@@ -16,7 +16,6 @@ import {
   endOfWeek,
   format,
   formatDate,
-  getDay,
   isBefore,
   isSameDay,
   startOfDay,

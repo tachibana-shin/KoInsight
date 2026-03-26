@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Box,
   Flex,
+  Menu,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
@@ -11,12 +12,14 @@ import {
   IconCalendar,
   IconChartBar,
   IconDownload,
+  IconLanguage,
   IconMoon,
   IconReload,
   IconSun,
 } from '@tabler/icons-react';
 import { JSX, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { RoutePath } from '../../routes';
 import { Logo } from '../logo/logo';
 import { DownloadPluginModal } from './download-plugin';
@@ -28,6 +31,8 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
   const { pathname } = useLocation();
   const { setColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme();
+  const { t, i18n } = useTranslation();
+
   const toggleColorScheme = () => {
     setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
@@ -35,11 +40,11 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
   const [downloadOpened, { close: closeDownload, open: openDownload }] = useDisclosure(false);
 
   const tabs = [
-    { link: RoutePath.BOOKS, label: 'Books', icon: IconBooks },
-    { link: RoutePath.CALENDAR, label: 'Calendar', icon: IconCalendar },
-    { link: RoutePath.STATS, label: 'Reading stats', icon: IconChartBar },
-    { link: RoutePath.SYNCS, label: 'Progress syncs', icon: IconReload },
-    { onClick: openDownload, label: 'KOReader Plugin', icon: IconDownload },
+    { link: RoutePath.BOOKS, label: t('nav.books'), icon: IconBooks },
+    { link: RoutePath.CALENDAR, label: t('nav.calendar'), icon: IconCalendar },
+    { link: RoutePath.STATS, label: t('nav.stats'), icon: IconChartBar },
+    { link: RoutePath.SYNCS, label: t('nav.syncs'), icon: IconReload },
+    { onClick: openDownload, label: t('nav.plugin'), icon: IconDownload },
   ];
 
   const [active, setActive] = useState(
@@ -84,11 +89,41 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
       <div className={style.Footer}>
         <Flex gap="xs">
           <UploadForm />
+          <Menu position="top-end" withArrow>
+            <Menu.Target>
+              <ActionIcon
+                variant="default"
+                size="lg"
+                aria-label={t('nav.language')}
+              >
+                <IconLanguage stroke={1.5} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                onClick={() => i18n.changeLanguage('en')}
+                fw={i18n.language === 'en' ? 700 : 400}
+              >
+                🇬🇧 English
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => i18n.changeLanguage('vi')}
+                fw={i18n.language === 'vi' ? 700 : 400}
+              >
+                🇻🇳 Tiếng Việt
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => i18n.changeLanguage('ja')}
+                fw={i18n.language === 'ja' ? 700 : 400}
+              >
+                🇯🇵 日本語
+              </Menu.Item>
+            </Menu.Dropdown>          </Menu>
           <ActionIcon
             onClick={toggleColorScheme}
             variant="default"
             size="lg"
-            aria-label="Toggle color scheme"
+            aria-label={t('nav.toggleColorScheme')}
           >
             {computedColorScheme === 'dark' ? (
               <IconSun stroke={1.5} color="yellow" />

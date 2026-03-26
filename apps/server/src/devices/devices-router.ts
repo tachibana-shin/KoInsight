@@ -1,10 +1,13 @@
-import { Request, Response, Router } from 'express';
+import { Hono } from 'hono';
 import { DeviceRepository } from '../devices/device-repository';
-const router = Router();
+import { AppContext } from '../types';
 
-router.get('/', async (_: Request, res: Response) => {
-  const devices = await DeviceRepository.getAll();
-  res.status(200).json(devices);
+const devices = new Hono<AppContext>();
+
+devices.get('/', async (c) => {
+  const db = c.get('db');
+  const allDevices = await DeviceRepository.getAll(db);
+  return c.json(allDevices);
 });
 
-export { router as devicesRouter };
+export { devices as devicesRouter };

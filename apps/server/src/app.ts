@@ -1,71 +1,55 @@
-import cors from 'cors';
-import express, { Request, Response } from 'express';
-import { Server } from 'http';
-import morgan from 'morgan';
-import path from 'path';
-import { openAiRouter } from './ai/open-ai-router';
+import './config';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { authMiddleware } from './auth/auth-middleware';
+import { authRouter } from './auth/auth-router';
+import { aiRouter } from './ai/ai-router';
 import { booksRouter } from './books/books-router';
-import { appConfig } from './config';
+import { coversRouter } from './books/covers/covers-router';
 import { devicesRouter } from './devices/devices-router';
-import { db } from './knex';
 import { kopluginRouter } from './koplugin/koplugin-router';
 import { kosyncRouter } from './kosync/kosync-router';
 import { openLibraryRouter } from './open-library/open-library-router';
 import { statsRouter } from './stats/stats-router';
 import { uploadRouter } from './upload/upload-router';
+import { createDb } from './db';
+import { AppContext } from './types';
 
-async function setupServer() {
-  const app = express();
-  // Increase the limit to be able to upload the whole database
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
-  app.use(morgan('tiny'));
+const app = new Hono<AppContext>();
 
-  // if (appConfig.env === 'development') {
-  // Allow requests from dev build
-  app.use(cors({ origin: '*' }));
-  // }
+// Middleware
+app.use('*', logger());
+app.use('*', cors({ origin: '*' }));
 
-  app.use('/', kosyncRouter); // Needs to be mounted at root to follow KoSync API
-  app.use('/api/plugin', kopluginRouter);
-  app.use('/api/devices', devicesRouter);
-  app.use('/api/books', booksRouter);
-  app.use('/api/stats', statsRouter);
-  app.use('/api/upload', uploadRouter);
-  app.use('/api/open-library', openLibraryRouter);
-  app.use('/api/ai', openAiRouter);
+app.use('*', async (c, next) => {
+  const url = c.env.DATABASE_URL;
+  if (!url) {
+    return c.json({ error: 'DATABASE_URL is not set' }, 500);
+  }
+  const db = createDb(url);
+  c.set('db', db);
+  await next();
+});
 
-  // Serve react app
-  app.use(express.static(appConfig.webBuildPath));
-  app.get(/.*/, (_req: Request, res: Response) => {
-    res.sendFile(path.join(appConfig.webBuildPath, 'index.html'));
-  });
+// Auth routes (public - no auth middleware)
+app.route('/api/auth', authRouter);
 
-  // Start :)
-  const server = app.listen(appConfig.port, appConfig.hostname, () => {
-    console.info(`KoInsight back-end is running on http://${appConfig.hostname}:${appConfig.port}`);
-  });
+// Protect all /api/* routes with auth middleware (JWT check)
+app.use('/api/*', authMiddleware);
 
-  return server;
-}
+// KoSync API (mounted at root to maintain compatibility) - not protected
+app.route('/', kosyncRouter);
 
-function stopServer(signal: NodeJS.Signals, server: Server) {
-  console.log(`Received ${signal.toString()}. Gracefully shutting down...`);
-  server.close(() => {
-    console.log('Server closed.');
-    process.exit(0);
-  });
-}
+// API routes
+app.route('/api/plugin', kopluginRouter);
+app.route('/api/devices', devicesRouter);
+app.route('/api/books', booksRouter);
+// Note: covers sub-router is nested under books/:bookId/cover
+app.route('/api/books/:bookId/cover', coversRouter);
+app.route('/api/stats', statsRouter);
+app.route('/api/upload', uploadRouter);
+app.route('/api/open-library', openLibraryRouter);
+app.route('/api/ai', aiRouter);
 
-async function main() {
-  console.log('Running database migrations');
-  await db.migrate.latest({ directory: path.join(__dirname, 'db', 'migrations') });
-  console.log('Database migrated successfully');
-
-  setupServer().then((server) => {
-    process.on('SIGINT', (signal) => stopServer(signal, server));
-    process.on('SIGTERM', (signal) => stopServer(signal, server));
-  });
-}
-
-main();
+export default app;

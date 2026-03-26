@@ -7,11 +7,16 @@
     "PORT",
     "VITE_WEB_HOSTNAME",
     "VITE_WEB_PORT",
+    "GEMINI_API_KEY",
     "OPENAI_API_KEY",
     "OPENAI_API_URL",
     "OPENAI_API_VERSION"
   ],
   "tasks": {
+    "dev:web": {
+      "persistent": true,
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
@@ -25,6 +30,10 @@
     },
     "test:coverage": {
       "dependsOn": ["^test:coverage"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "cache": false
     }
   }
 }

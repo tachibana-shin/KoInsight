@@ -1,0 +1,16 @@
+meta {
+  name: book insights
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://{{host}}:{{port}}/api/ai/book-insights
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-auth-user: {{username}}
+  x-auth-key: {{password}}
+}

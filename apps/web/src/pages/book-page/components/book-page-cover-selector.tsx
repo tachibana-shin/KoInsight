@@ -1,5 +1,5 @@
 import { Book } from '@koinsight/common/types/book';
-import { ActionIcon, Box, Button, Flex, Image, Skeleton, TextInput, Tooltip } from '@mantine/core';
+import { Box, Button, Flex, Image, Skeleton, TextInput, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { JSX, useEffect, useState } from 'react';
 import { listCovers, saveCover } from '../../../api/open-library';
@@ -42,7 +42,7 @@ export function BookPageCoverSelector({
       loadedCovers: [],
       isSavingCovers: false,
     }));
-    const coverIds = await listCovers(state.query || book.title);
+    const coverIds = await listCovers(state.query || book.title || '');
     setState((prev) => ({ ...prev, isLoading: false, data: coverIds }));
   };
 

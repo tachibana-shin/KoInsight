@@ -22,6 +22,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { JSX, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBooks } from '../../api/books';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { BooksCards } from './books-cards';
@@ -30,6 +31,7 @@ import { BooksTable } from './books-table';
 import style from './books-page.module.css';
 
 export function BooksPage(): JSX.Element {
+  const { t } = useTranslation();
   const media = useMediaQuery(`(max-width: 62em)`);
 
   const [mode, setMode] = useLocalStorage<'table' | 'cards'>({
@@ -93,7 +95,7 @@ export function BooksPage(): JSX.Element {
   });
 
   if (error) {
-    return <Flex justify="center">Failed to load books</Flex>;
+    return <Flex justify="center">{t('books.failedToLoad')}</Flex>;
   }
 
   if (isLoading || !books) {
@@ -107,10 +109,10 @@ export function BooksPage(): JSX.Element {
   if (books.length === 0) {
     return (
       <>
-        <Title mb="xl">Books</Title>
+        <Title mb="xl">{t('books.title')}</Title>
         <EmptyState
-          title="No books yet"
-          description="It seems like you haven't uploaded any reading statistics yet."
+          title={t('books.noBooks')}
+          description={t('books.noBooksDescription')}
         />
       </>
     );
@@ -118,11 +120,11 @@ export function BooksPage(): JSX.Element {
 
   return (
     <>
-      <Title mb="xl">Books</Title>
+      <Title mb="xl">{t('books.title')}</Title>
       <div className={style.Controls}>
         <Flex gap="md">
           <TextInput
-            placeholder="Search books..."
+            placeholder={t('books.searchPlaceholder')}
             w={media ? '100%' : 300}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +134,7 @@ export function BooksPage(): JSX.Element {
               ) : null
             }
           />
-          <Tooltip label="Advanced filters" openDelay={1000} position="top" withArrow>
+          <Tooltip label={t('books.advancedFilters')} openDelay={1000} position="top" withArrow>
             <Button variant="default" onClick={openAdvancedFilters}>
               <IconFilter size={14} />
             </Button>
@@ -141,7 +143,12 @@ export function BooksPage(): JSX.Element {
         <Group align="center">
           <Tooltip
             openDelay={1000}
-            label={`Sort ${sortBy.direction === 'asc' ? 'descending' : 'ascending'}`}
+            label={t('books.sortSort', {
+              direction:
+                sortBy.direction === 'asc'
+                  ? t('books.sortDirection.descending')
+                  : t('books.sortDirection.ascending'),
+            })}
             position="top"
             withArrow
           >
@@ -161,7 +168,7 @@ export function BooksPage(): JSX.Element {
               )}
             </Button>
           </Tooltip>
-          <Tooltip label="Sort by" openDelay={1000} position="top" withArrow>
+          <Tooltip label={t('books.sortBy')} openDelay={1000} position="top" withArrow>
             <Select
               leftSection={<IconArrowsDownUp size={16} />}
               w={150}
@@ -170,18 +177,18 @@ export function BooksPage(): JSX.Element {
               onChange={(value) => setSortBy((prev) => ({ ...prev, key: value as keyof Book }))}
               data={
                 [
-                  { label: 'Added', value: 'id' },
-                  { label: 'Title', value: 'title' },
-                  { label: 'Author', value: 'authors' },
-                  { label: 'Read time', value: 'total_read_time' },
-                  { label: 'Last open', value: 'last_open' },
+                  { label: t('books.sortOptions.added'), value: 'id' },
+                  { label: t('books.sortOptions.title'), value: 'title' },
+                  { label: t('books.sortOptions.author'), value: 'authors' },
+                  { label: t('books.sortOptions.readTime'), value: 'total_read_time' },
+                  { label: t('books.sortOptions.lastOpen'), value: 'last_open' },
                 ] as { label: string; value: keyof Book }[]
               }
               defaultValue="title"
             />
           </Tooltip>
           <Button.Group variant="default">
-            <Tooltip label="Table view" position="top" withArrow>
+            <Tooltip label={t('books.tableView')} position="top" withArrow>
               <Button
                 variant={mode === 'table' ? 'filled' : 'default'}
                 onClick={() => setMode('table')}
@@ -189,7 +196,7 @@ export function BooksPage(): JSX.Element {
                 <IconTable size={16} />
               </Button>
             </Tooltip>
-            <Tooltip label="Cards view" position="top" withArrow>
+            <Tooltip label={t('books.cardsView')} position="top" withArrow>
               <Button
                 variant={mode === 'cards' ? 'filled' : 'default'}
                 onClick={() => setMode('cards')}
@@ -204,7 +211,7 @@ export function BooksPage(): JSX.Element {
       <Modal
         opened={viewAdvancedFilters}
         onClose={closeAdvancedFilters}
-        title="Advanced filters"
+        title={t('books.advancedFilters')}
         styles={{
           title: {
             fontSize: 'var(--mantine-font-size-xl)',
@@ -219,7 +226,7 @@ export function BooksPage(): JSX.Element {
         <Checkbox
           checked={showHiddenBooks}
           onChange={(v) => setShowHiddenBooks(v.target.checked)}
-          label="View hidden books"
+          label={t('books.viewHidden')}
         />
       </Modal>
     </>

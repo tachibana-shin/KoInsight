@@ -4,6 +4,7 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { mutate } from 'swr';
 import { deleteBook } from '../../../api/books';
@@ -14,21 +15,24 @@ export type BookDeleteProps = {
 };
 
 export function BookDelete({ book }: BookDeleteProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const openDeleteConfirm = () =>
     modals.openConfirmModal({
-      title: 'Delete Book?',
+      title: t('manage.deleteConfirmTitle'),
       centered: true,
       children: (
         <Text size="sm">
-          Are you sure you want to delete <strong>{book ? `"${book?.title}"` : 'this book'}</strong>
-          ? This action is destructive and cannot be reverted.
+          <Trans i18nKey="manage.deleteConfirmText" values={{ title: book?.title ?? 'this book' }}>
+            Are you sure you want to delete <strong>{book ? `"${book?.title}"` : 'this book'}</strong>
+            ? This action is destructive and cannot be reverted.
+          </Trans>
         </Text>
       ),
-      labels: { confirm: 'Delete', cancel: "No, don't delete it" },
+      labels: { confirm: t('manage.deleteConfirmButton'), cancel: t('manage.deleteCancelButton') },
       confirmProps: { color: 'red' },
       onConfirm: onDelete,
     });
@@ -38,17 +42,18 @@ export function BookDelete({ book }: BookDeleteProps) {
       setDeleteLoading(true);
       await deleteBook(book.id);
       await mutate('books');
-      navigate(RoutePath.HOME);
+      void navigate(RoutePath.HOME);
       notifications.show({
-        title: 'Book deleted',
-        message: `${book ? `"${book?.title}"` : 'Book'} deleted successfully.`,
+        title: t('manage.deleteSuccess'),
+        message: t('manage.deleteSuccessMessage', { title: book?.title ?? 'Book' }),
         color: 'green',
         position: 'top-center',
       });
     } catch (error) {
+      console.warn(error)
       notifications.show({
-        title: 'Failed to delete the book',
-        message: 'Failed to delete the book.',
+        title: t('manage.deleteFailed'),
+        message: t('manage.deleteFailedMessage'),
         color: 'red',
         position: 'top-center',
       });
@@ -58,7 +63,7 @@ export function BookDelete({ book }: BookDeleteProps) {
   return (
     <div>
       <Title order={3} mb="md">
-        Delete book
+        {t('manage.deleteTitle')}
       </Title>
       <Button
         loading={deleteLoading}
@@ -66,7 +71,7 @@ export function BookDelete({ book }: BookDeleteProps) {
         variant="danger"
         onClick={openDeleteConfirm}
       >
-        Delete book
+        {t('manage.deleteButton')}
       </Button>
     </div>
   );

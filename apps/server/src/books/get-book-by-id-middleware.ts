@@ -1,36 +1,21 @@
-import { Book } from '@koinsight/common/types/book';
-import { NextFunction, Request, Response } from 'express';
+import { Context, Next } from 'hono';
 import { BooksRepository } from './books-repository';
+import { AppContext } from '../types';
 
-declare global {
-  namespace Express {
-    interface Request {
-      book?: Book;
-    }
-  }
-}
+export const getBookById = async (c: Context<AppContext>, next: Next) => {
+  const bookId = Number(c.req.param('bookId'));
+  const db = c.get('db');
 
-export async function getBookById(req: Request, res: Response, next: NextFunction) {
-  const bookId = req.params.bookId;
-
-  if (!bookId) {
-    res.status(400).json({ error: 'Book ID is required' });
-    return;
+  if (isNaN(bookId)) {
+    return c.json({ error: 'Invalid book ID' }, 400);
   }
 
-  try {
-    const book = await BooksRepository.getById(Number(bookId));
+  const book = await BooksRepository.getById(db, bookId);
 
-    if (!book) {
-      res.status(404).json({ error: 'Book not found' });
-      return;
-    }
-
-    req.book = book;
-    next();
-  } catch (error) {
-    console.error('Error fetching book:', error);
-    res.status(500).json({ error: 'Internal server error' });
-    return;
+  if (!book) {
+    return c.json({ error: 'Book not found' }, 404);
   }
-}
+
+  c.set('book', book);
+  await next();
+};

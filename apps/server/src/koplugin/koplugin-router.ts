@@ -2,100 +2,113 @@ import { KoReaderAnnotation } from '@koinsight/common/types/annotation';
 import { KoReaderBook } from '@koinsight/common/types/book';
 import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
-import archiver from 'archiver';
-import { NextFunction, Request, Response, Router } from 'express';
-import path from 'path';
+// import JSZip from 'jszip';
+// import fs from 'node:fs/promises';
+import { Context, Hono, Next } from 'hono';
+// import path from 'node:path';
+// import { stream } from 'hono/streaming';
 import { DeviceRepository } from '../devices/device-repository';
+import { AppContext, Variables as AppVariables } from '../types';
 import { UploadService } from '../upload/upload-service';
 
-// Router for KoInsight koreader plugin
-const router = Router();
+// async function addDirectoryToZip(zip: JSZip, directoryPath: string, rootPath: string) {
+//   const files = await fs.readdir(directoryPath, { withFileTypes: true });
+
+//   for (const file of files) {
+//     const fullPath = path.join(directoryPath, file.name);
+//     const relativePath = path.relative(rootPath, fullPath);
+
+//     if (file.isDirectory()) {
+//       zip.folder(relativePath);
+//       await addDirectoryToZip(zip, fullPath, rootPath);
+//     } else {
+//       const content = await fs.readFile(fullPath);
+//       zip.file(relativePath, content);
+//     }
+//   }
+// }
+
+type Variables = AppVariables & {
+  body: any;
+};
+
+const koplugin = new Hono<{ Bindings: AppContext['Bindings']; Variables: Variables }>();
 
 export const REQUIRED_PLUGIN_VERSION = '0.3.0';
 
-const rejectOldPluginVersion = (req: Request, res: Response, next: NextFunction) => {
-  const { version } = req.body;
+const rejectOldPluginVersion = async (
+  c: Context<{ Bindings: AppContext['Bindings']; Variables: Variables }>,
+  next: Next
+) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { version } = body;
+  // Store body for later use since we consumed it
+  c.set('body', body);
 
   if (!version || version !== REQUIRED_PLUGIN_VERSION) {
-    res.status(400).json({
-      error: `Unsupported plugin version. Version must be ${REQUIRED_PLUGIN_VERSION}. Please update your KOReader koinsight.koplugin`,
-    });
-    return;
+    return c.json(
+      {
+        error: `Unsupported plugin version. Version must be ${REQUIRED_PLUGIN_VERSION}. Please update your KOReader koinsight.koplugin`,
+      },
+      400
+    );
   }
-
-  next();
+  await next();
 };
 
-router.post('/device', rejectOldPluginVersion, async (req, res) => {
-  const { id, model } = req.body;
+koplugin.post('/device', rejectOldPluginVersion, async (c) => {
+  const { id, model } = c.get('body');
 
   if (!id || !model) {
-    res.status(400).json({ error: 'Missing device ID or model' });
-    return;
+    return c.json({ error: 'Missing device ID or model' }, 400);
   }
 
   const device: Device = { id, model };
-
+  const db = c.get('db');
   try {
-    console.debug('Registering device:', device);
-    await DeviceRepository.insertIfNotExists(device);
-    res.status(200).json({ message: 'Device registered successfully' });
+    await DeviceRepository.insertIfNotExists(db, device);
+    return c.json({ message: 'Device registered successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error registering device' });
+    return c.json({ error: 'Error registering device' }, 500);
   }
 });
 
-router.post('/import', rejectOldPluginVersion, async (req, res) => {
-  const contentLength = req.headers['content-length'];
-  console.warn(`[${req.method}] ${req.url} — Content-Length: ${contentLength || 'unknown'} bytes`);
-
-  const koreaderBooks: KoReaderBook[] = req.body.books;
-  const newPageStats: PageStat[] = req.body.stats;
-  const annotations: Record<string, KoReaderAnnotation[]> = req.body.annotations || {};
-  const deviceId: string | undefined = req.body.device_id; // For annotation sync path
+koplugin.post('/import', rejectOldPluginVersion, async (c) => {
+  const body = c.get('body');
+  const koreaderBooks: KoReaderBook[] = body.books;
+  const newPageStats: PageStat[] = body.stats;
+  const annotations: Record<string, KoReaderAnnotation[]> = body.annotations || {};
+  const deviceId: string | undefined = body.device_id;
+  const db = c.get('db');
 
   try {
-    console.debug('Importing books:', koreaderBooks);
-    console.debug('Importing page stats:', newPageStats);
-    console.debug(
-      'Importing annotations:',
-      Object.keys(annotations).length,
-      'books with annotations'
-    );
-
-    await UploadService.uploadStatisticData(koreaderBooks, newPageStats, annotations, deviceId);
-    res.status(200).json({ message: 'Upload successful' });
+    await UploadService.uploadStatisticData(db, koreaderBooks, newPageStats, annotations, deviceId);
+    return c.json({ message: 'Upload successful' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error importing data' });
+    return c.json({ error: 'Error importing data' }, 500);
   }
 });
 
-// TODO: implement check in koreader plugin
-router.get('/health', rejectOldPluginVersion, async (_, res) => {
-  res.status(200).json({ message: 'Plugin is healthy' });
+koplugin.get('/health', rejectOldPluginVersion, async (c) => {
+  return c.json({ message: 'Plugin is healthy' });
 });
 
-router.get('/download', (_, res) => {
-  const folderPath = path.join(__dirname, '../../../../', 'plugins');
-  const archive = archiver('zip', { zlib: { level: 9 } });
+// koplugin.get('/download', async (c) => {
+//   const folderPath = path.join(import.meta.dirname ?? '', '../../../../', 'plugins');
 
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
+//   const zip = new JSZip();
+//   await addDirectoryToZip(zip, folderPath, folderPath);
 
-  archive.on('error', (err) => {
-    console.error('Archive error:', err);
-    res.status(500).send('Error creating zip');
-  });
+//   const zipContent = await zip.generateAsync({ type: 'uint8array' });
 
-  // Pipe the archive directly to the response
-  archive.pipe(res);
+//   c.header('Content-Type', 'application/zip');
+//   c.header('Content-Disposition', 'attachment; filename=koinsight.plugin.zip');
 
-  // Add folder contents to the archive
-  archive.directory(folderPath, false);
+//   return stream(c, async (stream) => {
+//     await stream.write(zipContent);
+//   });
+// });
 
-  archive.finalize();
-});
-
-export { router as kopluginRouter };
+export { koplugin as kopluginRouter };

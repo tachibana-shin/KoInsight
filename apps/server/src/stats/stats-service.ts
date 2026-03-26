@@ -73,7 +73,7 @@ export class StatsService {
   }
 
   static totalPagesRead(books: BookWithData[]) {
-    return books.reduce((acc, book) => acc + book.total_read_pages, 0);
+    return books.reduce((acc, book) => acc + book.totalReadPages, 0);
   }
 
   private static getPagesPerDay(stats: PageStat[], books: Book[]) {

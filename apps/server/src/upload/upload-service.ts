@@ -1,53 +1,76 @@
 import {
-  Book,
-  BookDevice,
-  Device,
   KoReaderAnnotation,
   KoReaderBook,
   KoReaderPageStat,
   PageStat,
 } from '@koinsight/common/types';
-import Database, { Database as DatabaseType } from 'better-sqlite3';
-import { AnnotationsRepository } from '../annotations/annotations-repository';
-import { db } from '../knex';
+import { and, eq, isNull } from 'drizzle-orm';
+import { PgUpdateSetSource } from 'drizzle-orm/pg-core';
+import initSqlJs, { Database } from 'sql.js/dist/sql-asm.js';
+import { AnnotationsRepository } from '../annotations/AnnotationsRepository';
+import { DB } from '../db';
+import * as schema from '../db/schema';
+Object.defineProperty(globalThis, 'window', {
+  get: () => void 0,
+});
+Object.defineProperty(globalThis, 'WorkerGlobalScope', {
+  get: () => void 0,
+});
+Object.defineProperty(globalThis, '__dirname', {
+  get: () => '/',
+});
 
 export class UploadService {
   private static UNKNOWN_DEVICE_ID = 'manual-upload';
 
-  static openStatisticsDbFile(uploadedFilePath: string) {
-    const db = new Database(uploadedFilePath, { readonly: true });
-    const bookIds = db.prepare('SELECT id FROM book').all();
+  static async openStatisticsDbFile(buffer: Buffer | Uint8Array) {
+    const SQL = await initSqlJs();
+    const bsqlite = new SQL.Database(buffer);
 
-    if (!bookIds.length) {
+    const stmt = bsqlite.prepare('SELECT id FROM book');
+    const hasBooks = stmt.step();
+    stmt.free();
+
+    if (!hasBooks) {
       throw new Error('No books found in the uploaded file');
     }
 
-    return db;
+    return bsqlite;
   }
 
-  static extractDataFromStatisticsDb(db: DatabaseType) {
-    const newBooks = db.prepare('SELECT * FROM book').all() as KoReaderBook[];
-    const dbPageStats = db.prepare('SELECT * FROM page_stat_data').all() as KoReaderPageStat[];
+  static extractDataFromStatisticsDb(bsqlite: Database) {
+    const extractRows = <T>(query: string): T[] => {
+      const stmt = bsqlite.prepare(query);
+      const rows: T[] = [];
+      while (stmt.step()) {
+        rows.push(stmt.getAsObject() as unknown as T);
+      }
+      stmt.free();
+      return rows;
+    };
 
-    const newPageStats: PageStat[] = dbPageStats.map(({ id_book, ...stat }) => ({
+    const newBooks = extractRows<KoReaderBook>('SELECT * FROM book');
+    const dbPageStats = extractRows<KoReaderPageStat>('SELECT * FROM page_stat_data');
+
+    const newPageStats: Omit<PageStat, 'id'>[] = dbPageStats.map(({ id_book, ...stat }) => ({
       book_md5: newBooks.find((book) => book.id === id_book)!.md5,
       device_id: this.UNKNOWN_DEVICE_ID,
       ...stat,
+      total_pages: stat.total_pages,
+      start_time: stat.start_time,
     }));
 
     return { newBooks, newPageStats };
   }
 
-  static uploadStatisticData(
+  static async uploadStatisticData(
+    db: DB,
     booksToImport: KoReaderBook[],
-    newPageStats: PageStat[],
+    newPageStats: Omit<PageStat, 'id'>[],
     annotationsByBook?: Record<string, KoReaderAnnotation[]>,
     deviceIdOverride?: string // For annotation sync path without stats
   ) {
-    return db.transaction(async (trx) => {
-      // Normalize: the plugin sends {} (empty Lua table → JSON object) on the
-      // annotation-only path, not []. Guard all array operations against this,
-      // and drop clearly invalid page stat rows.
+    return await db.transaction(async (tx) => {
       const safePageStats = (Array.isArray(newPageStats) ? newPageStats : []).filter(
         (s) =>
           s != null &&
@@ -57,146 +80,139 @@ export class UploadService {
           Number.isFinite(s.total_pages) &&
           s.total_pages > 0
       );
+
       // Insert books
-      const newBooks: Partial<Book>[] = booksToImport.map((book) => ({
-        id: book.id,
-        md5: book.md5,
-        title: book.title,
-        authors: book.authors,
-        series: book.series,
-        language: book.language,
-      }));
+      for (const book of booksToImport) {
+        await tx
+          .insert(schema.book)
+          .values({
+            md5: book.md5,
+            title: book.title,
+            authors: book.authors,
+            series: book.series,
+            language: book.language,
+          })
+          .onConflictDoNothing({ target: schema.book.md5 });
+      }
 
-      await Promise.all(
-        newBooks.map(({ id, ...book }) => trx<Book>('book').insert(book).onConflict('md5').ignore())
-      );
+      const deviceId =
+        safePageStats.find((s) => s.device_id)?.device_id ??
+        deviceIdOverride ??
+        this.UNKNOWN_DEVICE_ID;
 
-      // Determine device ID: from stats, override, or fall back to unknown device
-      const firstValidStat = safePageStats.find((s) => s.device_id);
-      const deviceId = firstValidStat?.device_id ?? deviceIdOverride ?? this.UNKNOWN_DEVICE_ID;
+      // Ensure device exists
+      await tx
+        .insert(schema.device)
+        .values({
+          id: deviceId,
+          model: deviceId === this.UNKNOWN_DEVICE_ID ? 'Manual Upload' : 'Unknown Model',
+        })
+        .onConflictDoNothing();
 
-      const hasUnknownDevices = deviceId === this.UNKNOWN_DEVICE_ID;
+      // Update/Insert book_device
+      for (const book of booksToImport) {
+        const last_open =
+          Number.isFinite(book.last_open) && book.last_open > 0 ? book.last_open : 0;
+        const total_read_time = (book.total_read_time ?? 0) > 0 ? book.total_read_time : 0;
+        const total_read_pages = (book.total_read_pages ?? 0) > 0 ? book.total_read_pages : 0;
 
-      if (hasUnknownDevices) {
-        let unknownDevice = await trx<Device>('device')
-          .where({ id: this.UNKNOWN_DEVICE_ID })
-          .first();
+        const values = {
+          book_md5: book.md5,
+          device_id: deviceId,
+          pages: book.pages,
+          notes: book.notes,
+          highlights: book.highlights,
+          last_open: last_open,
+          total_read_time: total_read_time,
+          total_read_pages: total_read_pages,
+        };
 
-        if (!unknownDevice) {
-          console.log('Creating unknown device');
-          await trx<Device>('device').insert({
-            id: this.UNKNOWN_DEVICE_ID,
-            model: 'Manual Upload',
+        const updateData: PgUpdateSetSource<typeof schema.bookDevice> = {
+          pages: values.pages,
+          notes: values.notes,
+          highlights: values.highlights,
+        };
+        if (last_open > 0) updateData.last_open = last_open;
+        if ((total_read_time ?? 0) > 0) updateData.total_read_time = total_read_time;
+        if ((total_read_pages ?? 0) > 0) updateData.total_read_pages = total_read_pages;
+
+        await tx
+          .insert(schema.bookDevice)
+          .values(values)
+          .onConflictDoUpdate({
+            target: [schema.bookDevice.book_md5, schema.bookDevice.device_id],
+            set: updateData,
           });
+      }
+
+      // Insert page stats
+      if (safePageStats.length > 0) {
+        for (const stat of safePageStats) {
+          await tx
+            .insert(schema.pageStat)
+            .values({
+              book_md5: stat.book_md5,
+              device_id: deviceId,
+              page: stat.page,
+              duration: stat.duration,
+              total_pages: stat.total_pages,
+              start_time: stat.start_time,
+            })
+            .onConflictDoUpdate({
+              target: [
+                schema.pageStat.book_md5,
+                schema.pageStat.device_id,
+                schema.pageStat.page,
+                schema.pageStat.start_time,
+              ],
+              set: {
+                duration: stat.duration,
+                total_pages: stat.total_pages,
+              },
+            });
         }
       }
 
-      const newBookDevices: Omit<BookDevice, 'id'>[] = booksToImport.map((book) => ({
-        device_id: deviceId,
-        book_md5: book.md5,
-        last_open: book.last_open,
-        pages: book.pages,
-        notes: book.notes,
-        highlights: book.highlights,
-        total_read_pages: book.total_read_pages ?? 0,
-        total_read_time: book.total_read_time ?? 0,
-      }));
-
-      await Promise.all(
-        newBookDevices.map((bookDevice) => {
-          const { book_md5, device_id, total_read_time, total_read_pages, ...otherFields } =
-            bookDevice;
-
-          // Always merge these fields (last_open added conditionally below)
-          const fieldsToMerge: (keyof BookDevice)[] = ['pages', 'notes', 'highlights'];
-
-          // Only merge last_open if it's a valid positive Unix timestamp (seconds)
-          const last_open = bookDevice.last_open;
-          if (Number.isFinite(last_open) && last_open > 0) {
-            fieldsToMerge.push('last_open');
-          }
-
-          // Only merge statistics fields if they have actual values (if on statistics.db sync path)
-          // This prevents annotation-only syncs from overwriting with zeros
-          if (total_read_time !== undefined && total_read_time > 0) {
-            fieldsToMerge.push('total_read_time');
-          }
-          if (total_read_pages !== undefined && total_read_pages > 0) {
-            fieldsToMerge.push('total_read_pages');
-          }
-
-          return trx<BookDevice>('book_device')
-            .insert(bookDevice)
-            .onConflict(['book_md5', 'device_id'])
-            .merge(fieldsToMerge);
-        })
-      );
-
-      // Insert page stats (only on stats sync path! there are none for annotation sync path)
-      if (safePageStats.length > 0) {
-        await Promise.all(
-          safePageStats.map((pageStat) =>
-            trx<PageStat>('page_stat')
-              .insert(pageStat)
-              .onConflict(['device_id', 'book_md5', 'page', 'start_time'])
-              .merge(['duration', 'total_pages'])
-          )
-        );
-      }
-
-      // Insert annotations if provided
+      // Insert annotations
       if (annotationsByBook) {
-        await Promise.all(
-          Object.entries(annotationsByBook).map(([bookMd5, annotations]) =>
-            AnnotationsRepository.bulkInsert(bookMd5, deviceId, annotations, trx)
-          )
-        );
-
-        // FIXME: with this, if there is only 1 annotation and it gets removed, it won't get marked as deleted, because `annotationsByBook` will be empty. It will only get marked as deleted if the user adds another annotation to trigger an update on the book.
-        await Promise.all(
-          Object.entries(annotationsByBook).map(([bookMd5, annotations]) =>
-            this.detectAndMarkDeletedAnnotations(bookMd5, deviceId, annotations, trx)
-          )
-        );
+        for (const [bookMd5, annotations] of Object.entries(annotationsByBook)) {
+          await AnnotationsRepository.bulkInsert(db, bookMd5, deviceId, annotations, tx);
+          await this.detectAndMarkDeletedAnnotations(db, bookMd5, deviceId, annotations, tx);
+        }
       }
-
-      await trx.commit();
     });
   }
 
-  /**
-   * Detect annotations that exist in the database but not in the sync data
-   * These annotations were deleted in KoReader and should be marked as deleted
-   *
-   * @param bookMd5 - The book's MD5 hash
-   * @param deviceId - The device ID
-   * @param syncedAnnotations - Annotations received from KoReader
-   * @param trx - Transaction to use
-   */
   private static async detectAndMarkDeletedAnnotations(
+    db: DB,
     bookMd5: string,
     deviceId: string,
     syncedAnnotations: KoReaderAnnotation[],
-    trx: any
+    tx: any
   ): Promise<void> {
-    // Get all existing non-deleted annotations for this book and device
-    const existingAnnotations = await trx('annotation')
-      .where({ book_md5: bookMd5, device_id: deviceId })
-      .whereNull('deleted_at')
-      .select('page_ref', 'datetime');
+    const existingAnnotations = await tx
+      .select({
+        pageRef: schema.annotation.page_ref,
+        datetime: schema.annotation.datetime,
+      })
+      .from(schema.annotation)
+      .where(
+        and(
+          eq(schema.annotation.book_md5, bookMd5),
+          eq(schema.annotation.device_id, deviceId),
+          isNull(schema.annotation.deleted_at)
+        )
+      );
 
-    // Create a Set of identifiers from synced annotations for fast lookup
     const syncedIdentifiers = new Set(syncedAnnotations.map((a) => `${a.page}|${a.datetime}`));
 
-    // Find annotations that exist in DB but not in synced data
     const deletedAnnotations = existingAnnotations.filter(
-      (a: { page_ref: string; datetime: string }) =>
-        !syncedIdentifiers.has(`${a.page_ref}|${a.datetime}`)
+      (a: { pageRef: string; datetime: string }) =>
+        !syncedIdentifiers.has(`${a.pageRef}|${a.datetime}`)
     );
 
     if (deletedAnnotations.length > 0) {
-      await AnnotationsRepository.markManyAsDeleted(bookMd5, deviceId, deletedAnnotations, trx);
-
+      await AnnotationsRepository.markManyAsDeleted(db, bookMd5, deviceId, deletedAnnotations, tx);
       console.log(`Marked ${deletedAnnotations.length} annotations as deleted for book ${bookMd5}`);
     }
   }

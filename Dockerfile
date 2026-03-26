@@ -8,13 +8,13 @@ COPY apps/server/package.json ./apps/server/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/common/package.json ./packages/common/package.json
 
-RUN npm install
+RUN bun install
 
 COPY turbo.json .
 COPY apps ./apps
 COPY packages ./packages
 
-RUN npm run build
+RUN bun run build
 
 # Runner
 FROM node:22-alpine AS runner

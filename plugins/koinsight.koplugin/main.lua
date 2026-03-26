@@ -116,6 +116,7 @@ end
 -- Perform full sync of all books with progress UI
 function koinsight:performFullSync()
   local url = self.koinsight_settings:getServerURL()
+  local api_password = self.koinsight_settings:getApiPassword()
   if not url or url == "" then
     UIManager:show(
       InfoMessage:new({ text = _("KoInsight server URL is not configured."), timeout = 3 })
@@ -133,7 +134,7 @@ function koinsight:performFullSync()
   local NetworkMgr = require("ui/network/manager")
   NetworkMgr:runWhenOnline(function()
     local ok, err = pcall(function()
-      KoInsightUpload.syncAllBooks(url, function(progress)
+      KoInsightUpload.syncAllBooks(url, api_password, function(progress)
         -- Update progress UI
         if progress.phase == "syncing" then
           UIManager:close(progress_info)
@@ -227,6 +228,7 @@ end
 function koinsight:performSyncOnSuspend()
   -- Check if we have a server URL configured
   local server_url = self.koinsight_settings:getServerURL()
+  local api_password = self.koinsight_settings:getApiPassword()
   if not server_url or server_url == "" then
     logger.info("[KoInsight] No server URL configured, skipping sync on suspend")
     return
@@ -240,7 +242,7 @@ function koinsight:performSyncOnSuspend()
 
   -- Perform sync in a protected call to avoid crashing on suspend
   local success, error_msg = pcall(function()
-    KoInsightUpload.syncCurrentBook(server_url, true) -- true = silent mode
+    KoInsightUpload.syncCurrentBook(server_url, api_password, true) -- true = silent mode
   end)
 
   if not success then
@@ -258,6 +260,7 @@ end
 function koinsight:performAggressiveSyncOnSuspend()
   -- Check if we have a server URL configured
   local server_url = self.koinsight_settings:getServerURL()
+  local api_password = self.koinsight_settings:getApiPassword()
   if not server_url or server_url == "" then
     logger.info("[KoInsight] No server URL configured, skipping aggressive sync on suspend")
     return
@@ -299,7 +302,7 @@ function koinsight:performAggressiveSyncOnSuspend()
 
     -- Perform the actual sync
     logger.info("[KoInsight] Performing sync")
-    KoInsightUpload.syncCurrentBook(server_url, true) -- true = silent mode
+    KoInsightUpload.syncCurrentBook(server_url, api_password, true) -- true = silent mode
 
     -- Turn off WiFi if we turned it on
     if not was_wifi_on then

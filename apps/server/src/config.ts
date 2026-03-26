@@ -1,8 +1,6 @@
-require('dotenv').config();
-
 import path from 'path';
 
-const BASE_PATH = __dirname;
+const BASE_PATH = import.meta.dirname ?? '';
 const DATA_PATH = process.env.DATA_PATH || path.resolve(BASE_PATH, '../../../', 'data');
 const MAX_FILE_SIZE_MB = Number(process.env.MAX_FILE_SIZE_MB) || 100;
 
@@ -25,7 +23,30 @@ export const appConfig = {
     maxFileSizeMegaBytes: MAX_FILE_SIZE_MB,
   },
 
+  imgbb: {
+    apiKey: process.env.IMGBB_API_KEY || '',
+  },
+
+  imgur: {
+    clientId: process.env.IMGUR_CLIENT_ID || '',
+  },
+
+  flickr: {
+    apiKey: process.env.FLICKR_API_KEY || '',
+    apiSecret: process.env.FLICKR_API_SECRET || '',
+    accessToken: process.env.FLICKR_ACCESS_TOKEN || '',
+    tokenSecret: process.env.FLICKR_TOKEN_SECRET || '',
+    userId: process.env.FLICKR_USER_ID || '',
+  },
+
+  webdav: {
+    url: process.env.WEBDAV_URL || '',
+    username: process.env.WEBDAV_USERNAME || '',
+    password: process.env.WEBDAV_PASSWORD || '',
+  },
+
   db: {
+    url: process.env.DATABASE_URL || '',
     dev: path.resolve(DATA_PATH, 'dev.sqlite3'),
     prod: path.resolve(DATA_PATH, 'prod.sqlite3'),
   },

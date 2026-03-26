@@ -1,4 +1,4 @@
-import { Button, Flex, Modal, ModalProps, Stack, Text, Title } from '@mantine/core';
+import { Button, Flex, Modal, ModalProps, Stack, Text } from '@mantine/core';
 import { IconDownload } from '@tabler/icons-react';
 import { JSX } from 'react';
 
@@ -37,7 +37,7 @@ export function DownloadPluginModal({ opened, onClose }: DownloadPluginModalProp
           </Stack>
         </Flex>
 
-        <Button component="a" href="/api/plugin/download" leftSection={<IconDownload size={16} />}>
+        <Button component="a" href="/koinsight-plugin.zip" leftSection={<IconDownload size={16} />}>
           Download KOReader Plugin
         </Button>
       </Flex>

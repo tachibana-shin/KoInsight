@@ -2,7 +2,6 @@ import { BookWithData } from '@koinsight/common/types';
 import {
   ActionIcon,
   Box,
-  Button,
   Flex,
   Group,
   Image,
@@ -21,19 +20,20 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { JSX, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { API_URL } from '../../api/api';
 import { formatRelativeDate } from '../../utils/dates';
 import { BookPageCoverSelector } from './components/book-page-cover-selector';
 
 import style from './book-card.module.css';
 import { BookUploadCover } from './components/book-upload-cover';
-import { mutate } from 'swr';
 
 type BookCardProps = {
   book: BookWithData;
 };
 
 export function BookCard({ book }: BookCardProps): JSX.Element {
+  const { t } = useTranslation();
   const media = useMediaQuery(`(max-width: 62em)`);
   const [isCoverSelectorOpened, { open: openCoverSelector, close: closeCoverSelector }] =
     useDisclosure(false);
@@ -60,11 +60,11 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
           key={`cover-${book.id}-${coverVersion}`}
           src={`${API_URL}/books/${book.id}/cover?v=${coverVersion}`}
           h={media ? 150 : 250}
-          alt={book.title}
+          alt={book.title ?? undefined}
           radius="md"
           fallbackSrc="/book-placeholder-small.png"
         />
-        <Tooltip label="Change cover" position="right" withArrow>
+        <Tooltip label={t('book.changeCover')} position="right" withArrow>
           <ActionIcon
             className={style.EditIcon}
             variant="filled"
@@ -79,14 +79,14 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
       <Modal
         opened={isCoverSelectorOpened}
         onClose={closeCoverSelector}
-        title="Change book cover"
+        title={t('book.changeBookCover')}
         size="calc(100vw - 3rem)"
         centered
       >
         <Tabs defaultValue="cover-selector" variant="outline">
           <Tabs.List>
-            <Tabs.Tab value="cover-selector">Select Cover</Tabs.Tab>
-            <Tabs.Tab value="upload-cover">Upload Cover</Tabs.Tab>
+            <Tabs.Tab value="cover-selector">{t('book.selectCover')}</Tabs.Tab>
+            <Tabs.Tab value="upload-cover">{t('book.uploadCover')}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="cover-selector" p="md">
@@ -100,44 +100,44 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
       </Modal>
       <div>
         <Flex align="center" gap={8} mt={3}>
-          <Tooltip label="Author" position="top" withArrow>
+          <Tooltip label={t('common.author')} position="top" withArrow>
             <IconUser stroke={1.5} size={16} />
           </Tooltip>
-          <span className={style.Author}>{book.authors ?? 'N/A'}</span>
+          <span className={style.Author}>{book.authors ?? t('common.none')}</span>
         </Flex>
 
         <Title fw="800">{book.title}</Title>
 
         <Flex align="center" gap={8} mt="sm">
-          <Tooltip label="Series" position="top" withArrow>
+          <Tooltip label={t('common.series')} position="top" withArrow>
             <IconBooks stroke={1.5} size={16} />
           </Tooltip>
           <span className={style.InfoText}>{book.series}</span>
         </Flex>
 
         <Flex align="center" gap={8} mt={5}>
-          <Tooltip label="Last opened" position="top" withArrow>
+          <Tooltip label={t('common.lastOpened')} position="top" withArrow>
             <IconCalendar stroke={1.5} size={16} />
           </Tooltip>
-          <span className={style.InfoText}>{formatRelativeDate(book.last_open * 1000)}</span>
+          <span className={style.InfoText}>{formatRelativeDate(book.lastOpen * 1000)}</span>
         </Flex>
 
         <Group>
           <Flex align="center" gap={8} mt={5}>
-            <Tooltip label="Highlights" position="top" withArrow>
+            <Tooltip label={t('common.highlights')} position="top" withArrow>
               <IconHighlight stroke={1.5} size={16} />
             </Tooltip>
             <span className={style.InfoText}>
-              {book.device_data.reduce((acc, device) => acc + device.highlights, 0)}
+              {book.deviceData.reduce((acc, device) => acc + (device.highlights ?? 0), 0)}
             </span>
           </Flex>
 
           <Flex align="center" gap={8} mt={5}>
-            <Tooltip label="Notes" position="top" withArrow>
+            <Tooltip label={t('common.notes')} position="top" withArrow>
               <IconNote stroke={1.5} size={16} />
             </Tooltip>
             <span className={style.InfoText}>
-              {book.device_data.reduce((acc, device) => acc + device.notes, 0)}
+              {book.deviceData.reduce((acc, device) => acc + (device.notes ?? 0), 0)}
             </span>
           </Flex>
         </Group>

@@ -1,6 +1,5 @@
 import { Annotation, Book } from '@koinsight/common/types';
-import { NavLink as RouterNavLink } from 'react-router';
-import { Anchor, Badge, Box, Group, NavLink, Paper, Stack, Text } from '@mantine/core';
+import { Anchor, Badge, Box, Group, Paper, Stack, Text } from '@mantine/core';
 import {
   IconArticle,
   IconBookmark,
@@ -11,7 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { JSX } from 'react';
-import { Link } from 'react-router';
+import { NavLink as RouterNavLink } from 'react-router';
 import { RoutePath } from '../../../routes';
 
 type AnnotationCardProps = {
@@ -23,26 +22,30 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
   const getTypeIcon = () => {
     switch (annotation.annotation_type) {
       case 'highlight':
-        return <IconHighlight size={16} />;
+        return <IconHighlight size={14} />;
       case 'note':
-        return <IconNote size={16} />;
+        return <IconNote size={14} />;
       case 'bookmark':
-        return <IconBookmark size={16} />;
+        return <IconBookmark size={14} />;
+      default:
+        return null;
     }
   };
 
-  const getTypeColor = () => {
-    switch (annotation.annotation_type) {
-      case 'highlight':
-        return 'yellow';
-      case 'note':
-        return 'blue';
-      case 'bookmark':
-        return 'green';
-    }
-  };
+  // const getTypeColor = () => {
+  //   switch (annotation.annotationType) {
+  //     case 'highlight':
+  //       return 'yellow';
+  //     case 'note':
+  //       return 'blue';
+  //     case 'bookmark':
+  //       return 'green';
+  //     default:
+  //       return 'gray';
+  //   }
+  // };
 
-  const isDeleted = annotation.deleted_at || annotation.deleted;
+  const isDeleted = Boolean(annotation.deleted_at);
 
   return (
     <Paper
@@ -56,9 +59,21 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
       <Stack gap="xs">
         <Group justify="space-between">
           <Group gap="xs">
-            <Badge leftSection={getTypeIcon()} color={getTypeColor()} variant="light" size="sm">
-              {annotation.annotation_type}
-            </Badge>
+            {annotation.annotation_type === 'note' && (
+              <Badge leftSection={getTypeIcon()} color="blue" variant="light" size="sm">
+                Note
+              </Badge>
+            )}
+            {annotation.annotation_type === 'bookmark' && (
+              <Badge leftSection={getTypeIcon()} color="green" variant="light" size="sm">
+                Bookmark
+              </Badge>
+            )}
+            {annotation.annotation_type === 'highlight' && (
+              <Badge leftSection={getTypeIcon()} color="yellow" variant="light" size="sm">
+                Highlight
+              </Badge>
+            )}
             {annotation.color && (
               <Badge variant="outline" size="sm" color="gray">
                 {annotation.color}
@@ -116,7 +131,7 @@ export function AnnotationCard({ annotation, book }: AnnotationCardProps): JSX.E
           )}
           {annotation.pageno && annotation.total_pages && (
             <Text size="xs" c="dimmed" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconVocabulary size={16} /> Page {annotation.pageno}/{annotation.total_pages}
+              <IconVocabulary size={16} /> Page {annotation.pageno} of {annotation.total_pages}
             </Text>
           )}
         </Group>
